@@ -6,60 +6,93 @@ Format: DECISION | RATIONALE | TRADEOFF
 ## Hardware & Runtime
 
 **[2026-08-26] Run UV-Net on M4 CPU, no GPU**
-UV-Net inference on a single part graph (few hundred nodes) takes <1s on CPU. For a POC demo with a pre-indexed library, this is fast enough.
-Tradeoff: inference bottleneck if scaling to 1000s of concurrent uploads. Production fix: batch indexing pipeline + GPU worker.
+UV-Net inference on a single part graph (few hundred nodes) takes <1s on CPU. For a POC demo with a pre-indexed library, this is fast enough. Log `graph_ms`, `uvnet_ms`, `faiss_ms` on search responses — "CPU, ~400ms, no GPU" is a strong demo talking point.
+Tradeoff: bottleneck at concurrent uploads in production. Fix: batch indexing pipeline + GPU worker.
 
 ---
 
 ## ML Architecture
 
 **[2026-08-26] UV-Net for CAD embedding, not AAGNet**
-UV-Net has a pre-trained model ready in `cad-feature-detection/feature_detector/model.tar.gz` with full inference pipeline (occwl + DGL). AAGNet has better per-feature instance segmentation but a different preprocessing pipeline (gAAG format) with no pre-trained weights readily available.
-Tradeoff: UV-Net global embeddings don't distinguish which specific machining features match — AAGNet would. Acceptable for POC; note this gap explicitly in demo.
+UV-Net has a pre-trained model in `cad-feature-detection/feature_detector/model.tar.gz` with the full inference pipeline (occwl + DGL). AAGNet has richer instance segmentation but requires different gAAG preprocessing and has no pre-trained weights readily available in the workspace.
+Tradeoff: UV-Net global embeddings don't identify *which* faces make two parts similar — AAGNet would. Acceptable for POC; call this out in the demo as a v2 improvement.
 
-**[2026-08-26] Extract global solid embedding from UV-Net, not per-face classification**
-UV-Net's trained head is for face-level segmentation. We detach the classification head and apply global mean pooling over final node features → one 512-dim vector per solid. This repurposes the encoder as a geometry feature extractor.
-Tradeoff: we lose the face-level granularity. In production, per-face embeddings would let you highlight *which faces* make two parts similar.
+**[2026-08-26] Use UV-Net's `graph_emb` (128-dim), not mean-pooled node features**
+UV-Net's `GraphEncoder.forward()` returns `(node_emb, graph_emb)`. `graph_emb` is max-pooled across GNN layers and is what the model was trained to produce — 128-dim, not 512-dim. Mean-pooling last-layer node features throws away the model's own pooling design.
+Tradeoff: none. This is the correct usage of the model.
 
-**[2026-08-26] sentence-transformers for text embeddings (local), Claude for explanations only**
-Anthropic has no dedicated embeddings endpoint. Using `sentence-transformers/all-MiniLM-L6-v2` (local, CPU-fast, 384-dim) for metadata text embeddings. Claude Sonnet used only for the "why are these similar" NL explanation — keeps API cost near zero for the demo.
-Tradeoff: MiniLM text quality is lower than OpenAI text-embedding-3-large. Fine for metadata like "aluminum bracket M6 holes CNC". Swap in production.
+**[2026-08-26] Keep UV-Net segmentation head for feature histograms**
+The segmentation head (already in the checkpoint) takes `node_emb` → per-face machining feature labels. Run it at no extra cost during indexing to produce a feature histogram (holes, fillets, pockets, chamfers). Used for chips on result cards, enriching text embeddings, and optional Jaccard overlap score. This is the "feature understanding layer" referenced in `ref.md` without needing AAGNet.
+Tradeoff: segmentation head was trained on MFCAD classes; labels on unusual geometry may be noisy. Show chips as indicative, not authoritative.
 
-**[2026-08-26] Weighted combination of CAD + text embeddings**
-Final query vector = 0.7 × normalized_geo_emb + 0.3 × normalized_text_emb (concatenated, then FAISS L2).
-Weights are heuristic for POC. In production, learn weights via user feedback (which results engineers actually click).
+**[2026-08-26] sentence-transformers MiniLM for text embeddings, Claude/Gemini for explanations only**
+Anthropic has no dedicated embeddings endpoint. `all-MiniLM-L6-v2` runs locally (384-dim, CPU-fast). Claude/Gemini called only for the 2–3 sentence "why similar" explanation — keeps API cost near zero for the demo.
+Tradeoff: MiniLM quality is lower than OpenAI text-embedding-3-large. Acceptable for metadata strings ("aluminum bracket M6 holes CNC"). Swap in production.
 
 ---
 
-## Search Infrastructure
+## Search Architecture
+
+**[2026-08-26] Two separate FAISS indexes + scalar score fusion (replaced concat + weighted-sum)**
+Original design had concat(geo, text) as one vector and weighted-sum in the same sentence — these are mutually exclusive operations. Fixed to: two separate FAISS flat indexes (128-dim geo, 384-dim text), cosine similarity returns scalars, fusion is `0.7 * geo_score + 0.3 * text_score`. Weights are config, not magic numbers.
+Tradeoff: two indexes to maintain. At 30–100 parts this is trivial; at scale, replace with a single vector DB that supports named namespaces (Qdrant collections).
+
+**[2026-08-26] Text-only search uses text_index only, not a "slice" of a concat index**
+If the index is concatenated geo+text, a text-only query that zeros the geo dims will still pull toward geometry. The text path queries only `text_index`, skipping UV-Net and pythonOCC entirely. CAD-only query uses only `geo_index`.
 
 **[2026-08-26] FAISS flat index (brute force) for POC**
 For a 30–100 part demo library, brute force L2 is instant and avoids IVF cluster tuning. Switch to FAISS IVFFlat at ~10k parts.
-Tradeoff: does not scale, but that's fine — we're demoing the concept not the infra.
+Tradeoff: does not scale. Fine — we're demoing the concept not the infra.
 
-**[2026-08-26] SQLite for part metadata, numpy .npy for embeddings**
-Avoids standing up Postgres/Qdrant/Pinecone for a local POC. SQLite ships with Python; numpy file loads in one call.
-Tradeoff: no concurrent writes, no persistence layer. Note in demo: "production would use Postgres + Qdrant/Weaviate."
+**[2026-08-26] Geometric fingerprints (OCC stats) as tie-breakers**
+When UV-Net scores cluster (e.g. simple prismatic blocks), bbox aspect ratios, volume, and face count break ties and provide explanation fodder ("similar bounding box, similar face count"). Zero extra ML — pythonOCC already has the solid.
+
+---
+
+## LLM / NL
+
+**[2026-08-26] LLM_PROVIDER env var + single adapter function**
+`LLM_PROVIDER` = `"anthropic"` | `"gemini"` | `"none"`. One 20-line adapter behind `explain()`. Default `"none"` → template explanation from scores + overlapping feature tags. Demo cannot die on API auth issues.
+
+**[2026-08-26] Cache LLM explanations in SQLite by (query_hash, result_id)**
+Repeat demo clicks on the same result do not re-bill the API and respond instantly.
 
 ---
 
 ## System Architecture
 
 **[2026-08-26] Start fresh (not extending Palmetto)**
-Palmetto's C++ engine (OpenCASCADE + Analysis Situs) is hard to maintain and tightly coupled to Palmetto's feature recognition. We only need pythonOCC + occwl for STEP → DGL graph, which is lighter. Starting fresh keeps the codebase clean and interview-explainable.
-Tradeoff: we rebuild STEP upload + 3D viewer from scratch (~1 day). Worth it for clarity.
+Palmetto's C++ engine (OpenCASCADE + Analysis Situs) is tightly coupled to its own pipeline. We only need pythonOCC + occwl for STEP → DGL graph. Starting fresh keeps the codebase clean and every line explainable in an interview.
+Tradeoff: rebuild STEP upload + 3D viewer (~1 day). Worth it for clarity.
+
+**[2026-08-26] All search weights and thresholds are config, not hardcoded**
+`GEO_WEIGHT`, `TEXT_WEIGHT`, `DUP_THRESHOLD`, `WEAK_THRESHOLD`, `TOP_K` live in `config.py` sourced from env vars. Interview story: "in production, we learn these weights from click data" — the click log table is already in the SQLite schema.
+
+**[2026-08-26] Assembly support deferred**
+Multi-body STEP files: embed each body separately, store `parent_id`, query takes max body score. Correct approach but adds a loop and complicates glTF export. For POC, warn the user ("multi-body detected, embedding first solid only") and log. V2.
 
 **[2026-08-26] VLM-CADFeatureRecognition not used**
-Image-based approach requires a rendering pipeline (STEP → multi-view images). Adds complexity with no architectural gain over UV-Net for similarity search. Could be added as a complementary search mode in v2 (useful for "find parts that look like this image").
+Image-based approach requires a rendering pipeline (STEP → multi-view images). Adds complexity with no architectural gain over UV-Net for this use case. Could be a complementary v2 search mode ("find parts that look like this image").
 
 **[2026-08-26] AAGNet deferred to v2**
-AAGNet's value is rich machining feature metadata (feature type, bottom face, instance boundaries). In v2: run AAGNet on indexed parts to enrich metadata → better text embeddings + explainability. Requires gAAG preprocessing pipeline and pre-trained weights that aren't in the repo.
+Would add instance segmentation for richer face-level metadata. The segmentation head already on the UV-Net checkpoint gives us 80% of the value (feature histograms) without a second model. AAGNet v2: run at index time to enrich SQLite metadata.
 
 ---
 
-## Open questions / future decisions needed
+## Demo / Testing
+
+**[2026-08-26] `eval_retrieval.py` golden script before any UI work**
+8 labeled queries with expected top-3 results and score thresholds. Run before opening Vite. Know that UV-Net actually ranks the near-duplicate first before being on stage.
+
+**[2026-08-26] `demo_metadata.json` written as search documents, not labels**
+Tokens should be what an engineer would type: `M6`, `counterbore`, `6061`, `anodize`, `thin wall`. Include `known_issues` and `ppap_notes` even if fake — they power the Costing-prior rail and MiniLM. Include 2–3 parts sharing a supplier so "supplier recommendation" is a live result, not a roadmap slide.
+
+---
+
+## Open Questions / Future Decisions
 
 - Fine-tuning UV-Net on Pre6's actual historical parts (requires labeled internal dataset)
 - Production embedding store: Qdrant vs Weaviate vs pgvector
-- Auth/multi-tenant: which Pre6 customer's library is searched (data isolation)
-- How to handle assemblies (multi-body STEP files) — UV-Net is per solid body
+- Auth / multi-tenant: which Pre6 customer's library is searched (data isolation)
+- GEO_WEIGHT / TEXT_WEIGHT: learn from click log in production vs. keep heuristic
+- Drawings / PPAP PDFs: `pypdf` extract text → MiniLM (no VLM needed for v2 document search)

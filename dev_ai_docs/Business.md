@@ -38,10 +38,14 @@ The retrieved context is not just for the engineer's reference — it feeds dire
 
 **For Pre6's product:** This creates compounding stickiness. Every new project a customer runs through Pre6 enriches their searchable knowledge base — making Pre6 more valuable over time and raising the switching cost. [Ex: If all my projects are on Adobe cloud, I wouldn't want to switch to canva or vice-versa]
 
+## v1 Scope
+
+v1 retrieves similar solids and their manufacturing metadata and exports a Costing prior. Drawings, PPAP PDFs, and automatic Costing API injection are the same knowledge-loop, one integration later. Extensions 1–4 below are stubbed as UI elements in v1 — live results from metadata, not roadmap slides.
+
 ## Future Extensions (in order of value)
 
-1. **Duplicate detection** — flag near-identical designs before quoting, prevent redundant work
-2. **Cost prediction** — "based on 5 similar past parts, estimated cost range is $X–$Y" with confidence
-3. **Supplier recommendation** — "these suppliers machined similar parts at this tolerance"
-4. **DFM warnings from history** — "Project X had a thin-wall failure at this feature; your part has the same geometry"
+1. **Duplicate detection** — flag near-identical designs before quoting, prevent redundant work *(v1: banner at geo cosine ≥ 0.95)*
+2. **Cost prediction** — "based on 5 similar past parts, estimated cost range is $X–$Y" with confidence *(v1: cost band from top-3 neighbors)*
+3. **Supplier recommendation** — "these suppliers machined similar parts at this tolerance" *(v1: count supplier in top-3)*
+4. **DFM warnings from history** — "Project X had a thin-wall failure at this feature; your part has the same geometry" *(v1: highlight overlapping known_issues tags)*
 5. **Design recommendations** — nudge engineers toward manufacturing-friendly geometries based on past success/failure patterns
