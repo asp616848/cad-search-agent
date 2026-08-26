@@ -1,0 +1,11 @@
+# Heavy ML deps — install separately after base requirements.txt
+# macOS M-series: use conda for pythonOCC, pip for torch/DGL
+
+# CAD parsing
+# conda install -c conda-forge pythonocc-core=7.7.2
+# pip install occwl
+
+# Graph neural net
+torch==2.5.1
+# DGL CPU (M-series): pip install dgl -f https://data.dgl.ai/wheels/repo.html
+# or: conda install -c dglteam/label/th21_cpu dgl

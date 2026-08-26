@@ -1,0 +1,16 @@
+# Web
+fastapi==0.115.5
+uvicorn[standard]==0.32.1
+python-multipart==0.0.12
+httpx==0.28.0
+
+# Search & embeddings
+faiss-cpu==1.9.0
+sentence-transformers==3.3.1
+numpy==1.26.4
+
+# Dev / test
+pytest==8.3.4
+pytest-asyncio==0.24.0
+ruff==0.8.1
+black==24.10.0
