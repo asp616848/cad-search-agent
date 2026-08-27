@@ -6,7 +6,7 @@
     "process": "CNC Milling",
     "cost": 530,
     "supplier": "Precision Parts Co",
-    "notes": "Machined features: rectangular through slot rectangular blind slot",
+    "notes": "Machined features: 3x rectangular through slot 10x rectangular blind slot",
     "known_issues": "",
     "ppap_notes": ""
   },
@@ -17,7 +17,7 @@
     "process": "CNC Milling",
     "cost": 500,
     "supplier": "Acme Machining",
-    "notes": "Machined features: rectangular through slot rectangular blind slot rectangular pocket",
+    "notes": "Machined features: 3x rectangular through slot 5x rectangular blind slot 7x rectangular pocket",
     "known_issues": "",
     "ppap_notes": ""
   },
@@ -28,7 +28,7 @@
     "process": "CNC Milling",
     "cost": 390,
     "supplier": "Acme Machining",
-    "notes": "Machined features: rectangular through slot",
+    "notes": "Machined features: 5x rectangular through slot",
     "known_issues": "",
     "ppap_notes": ""
   },
@@ -39,7 +39,7 @@
     "process": "CNC Milling",
     "cost": 740,
     "supplier": "Acme Machining",
-    "notes": "Machined features: rectangular through slot rectangular blind slot rectangular pocket",
+    "notes": "Machined features: 2x rectangular through slot 5x rectangular blind slot 14x rectangular pocket",
     "known_issues": "thin wall near pocket caused chatter at high feed rate",
     "ppap_notes": "PPAP Level 2 approved"
   },
@@ -50,7 +50,7 @@
     "process": "CNC Milling",
     "cost": 410,
     "supplier": "Precision Parts Co",
-    "notes": "Machined features: rectangular through slot rectangular blind step rectangular passage rectangular blind slot",
+    "notes": "Machined features: 2x rectangular through slot 2x rectangular blind step 4x rectangular passage 5x rectangular blind slot",
     "known_issues": "",
     "ppap_notes": ""
   },
@@ -61,7 +61,7 @@
     "process": "CNC Milling",
     "cost": 510,
     "supplier": "Acme Machining",
-    "notes": "Machined features: rectangular through slot rectangular blind slot rectangular through step",
+    "notes": "Machined features: 2x rectangular through slot 5x rectangular blind slot 3x rectangular through step",
     "known_issues": "burr on through-slot edge needed deburring pass",
     "ppap_notes": ""
   },
@@ -72,7 +72,7 @@
     "process": "CNC Milling",
     "cost": 520,
     "supplier": "Precision Parts Co",
-    "notes": "Machined features: rectangular blind step rectangular through slot rectangular blind slot triangular blind step",
+    "notes": "Machined features: 2x rectangular blind step 2x rectangular through slot 5x rectangular blind slot 4x triangular blind step",
     "known_issues": "",
     "ppap_notes": ""
   },
@@ -83,7 +83,7 @@
     "process": "CNC Milling",
     "cost": 690,
     "supplier": "Midwest Fab",
-    "notes": "Machined features: rectangular through slot chamfer rectangular pocket triangular through slot",
+    "notes": "Machined features: 1x rectangular through slot 6x chamfer 7x rectangular pocket 3x triangular through slot",
     "known_issues": "",
     "ppap_notes": "PPAP Level 2 approved"
   },
@@ -94,7 +94,7 @@
     "process": "CNC Milling",
     "cost": 610,
     "supplier": "Acme Machining",
-    "notes": "Machined features: rectangular through slot triangular through slot triangular passage rectangular blind slot",
+    "notes": "Machined features: 1x rectangular through slot 12x triangular through slot 7x triangular passage 5x rectangular blind slot",
     "known_issues": "burr on through-slot edge needed deburring pass",
     "ppap_notes": ""
   },
@@ -105,7 +105,7 @@
     "process": "CNC Milling",
     "cost": 600,
     "supplier": "Precision Parts Co",
-    "notes": "Machined features: rectangular through slot triangular through slot 2sides through step triangular pocket",
+    "notes": "Machined features: 1x rectangular through slot 3x triangular through slot 2x 2sides through step 8x triangular pocket",
     "known_issues": "tight tolerance on mounting face required secondary op",
     "ppap_notes": ""
   },
@@ -116,7 +116,7 @@
     "process": "CNC Milling",
     "cost": 560,
     "supplier": "Acme Machining",
-    "notes": "Machined features: rectangular through slot rectangular blind slot",
+    "notes": "Machined features: 1x rectangular through slot 20x rectangular blind slot",
     "known_issues": "",
     "ppap_notes": ""
   },
@@ -127,7 +127,7 @@
     "process": "CNC Milling",
     "cost": 640,
     "supplier": "Acme Machining",
-    "notes": "Machined features: rectangular through slot 6sides pocket rectangular pocket",
+    "notes": "Machined features: 1x rectangular through slot 4x 6sides pocket 7x rectangular pocket",
     "known_issues": "tight tolerance on mounting face required secondary op",
     "ppap_notes": "PPAP Level 2 approved"
   },
@@ -138,7 +138,7 @@
     "process": "CNC Milling",
     "cost": 590,
     "supplier": "Midwest Fab",
-    "notes": "Machined features: rectangular through slot 6sides pocket rectangular passage rectangular pocket",
+    "notes": "Machined features: 1x rectangular through slot 4x 6sides pocket 4x rectangular passage 7x rectangular pocket",
     "known_issues": "",
     "ppap_notes": ""
   },
@@ -149,7 +149,7 @@
     "process": "CNC Milling",
     "cost": 560,
     "supplier": "Precision Parts Co",
-    "notes": "Machined features: rectangular through slot triangular through slot triangular passage rectangular blind slot rectangular passage",
+    "notes": "Machined features: 1x rectangular through slot 4x triangular through slot 2x triangular passage 5x rectangular blind slot 4x rectangular passage",
     "known_issues": "",
     "ppap_notes": ""
   },
@@ -160,7 +160,7 @@
     "process": "CNC Milling",
     "cost": 740,
     "supplier": "Precision Parts Co",
-    "notes": "Machined features: rectangular through slot rectangular passage rectangular pocket 2sides through step",
+    "notes": "Machined features: 1x rectangular through slot 4x rectangular passage 14x rectangular pocket 2x 2sides through step",
     "known_issues": "burr on through-slot edge needed deburring pass",
     "ppap_notes": ""
   },
@@ -171,7 +171,7 @@
     "process": "CNC Milling",
     "cost": 590,
     "supplier": "Precision Parts Co",
-    "notes": "Machined features: rectangular through slot rectangular passage rectangular blind slot triangular blind step",
+    "notes": "Machined features: 1x rectangular through slot 4x rectangular passage 5x rectangular blind slot 8x triangular blind step",
     "known_issues": "tight tolerance on mounting face required secondary op",
     "ppap_notes": "PPAP Level 2 approved"
   },
@@ -182,7 +182,7 @@
     "process": "CNC Milling",
     "cost": 830,
     "supplier": "Midwest Fab",
-    "notes": "Machined features: slanted through step rectangular through slot triangular passage triangular through slot rectangular blind slot",
+    "notes": "Machined features: 3x slanted through step 1x rectangular through slot 17x triangular passage 3x triangular through slot 5x rectangular blind slot",
     "known_issues": "thin wall near pocket caused chatter at high feed rate",
     "ppap_notes": ""
   },
@@ -193,7 +193,7 @@
     "process": "CNC Milling",
     "cost": 520,
     "supplier": "Precision Parts Co",
-    "notes": "Machined features: rectangular through slot 2sides through step triangular through slot triangular passage",
+    "notes": "Machined features: 1x rectangular through slot 4x 2sides through step 1x triangular through slot 5x triangular passage",
     "known_issues": "",
     "ppap_notes": ""
   },
@@ -204,7 +204,7 @@
     "process": "CNC Milling",
     "cost": 440,
     "supplier": "Precision Parts Co",
-    "notes": "Machined features: rectangular through slot chamfer 6sides passage rectangular blind slot",
+    "notes": "Machined features: 1x rectangular through slot 6x chamfer 2x 6sides passage 5x rectangular blind slot",
     "known_issues": "thin wall near pocket caused chatter at high feed rate",
     "ppap_notes": ""
   },
@@ -215,7 +215,7 @@
     "process": "CNC Milling",
     "cost": 460,
     "supplier": "Precision Parts Co",
-    "notes": "Machined features: rectangular through slot 6sides pocket 6sides passage rectangular through step",
+    "notes": "Machined features: 1x rectangular through slot 4x 6sides pocket 2x 6sides passage 3x rectangular through step",
     "known_issues": "",
     "ppap_notes": "PPAP Level 2 approved"
   },
@@ -226,7 +226,7 @@
     "process": "CNC Milling",
     "cost": 500,
     "supplier": "Precision Parts Co",
-    "notes": "Machined features: rectangular through slot rectangular blind step 6sides passage rectangular blind slot",
+    "notes": "Machined features: 1x rectangular through slot 2x rectangular blind step 2x 6sides passage 5x rectangular blind slot",
     "known_issues": "",
     "ppap_notes": ""
   },
@@ -237,7 +237,7 @@
     "process": "CNC Milling",
     "cost": 720,
     "supplier": "Midwest Fab",
-    "notes": "Machined features: rectangular through slot rectangular through step rectangular pocket",
+    "notes": "Machined features: 1x rectangular through slot 6x rectangular through step 14x rectangular pocket",
     "known_issues": "tight tolerance on mounting face required secondary op",
     "ppap_notes": ""
   },
@@ -248,7 +248,7 @@
     "process": "CNC Milling",
     "cost": 390,
     "supplier": "Acme Machining",
-    "notes": "Machined features: rectangular through slot 6sides pocket rectangular blind step rectangular through step",
+    "notes": "Machined features: 1x rectangular through slot 4x 6sides pocket 2x rectangular blind step 3x rectangular through step",
     "known_issues": "burr on through-slot edge needed deburring pass",
     "ppap_notes": ""
   },
@@ -259,7 +259,7 @@
     "process": "CNC Milling",
     "cost": 410,
     "supplier": "Acme Machining",
-    "notes": "Machined features: rectangular through slot 2sides through step rectangular blind slot",
+    "notes": "Machined features: 1x rectangular through slot 2x 2sides through step 5x rectangular blind slot",
     "known_issues": "burr on through-slot edge needed deburring pass",
     "ppap_notes": "PPAP Level 2 approved"
   },
@@ -270,7 +270,7 @@
     "process": "CNC Milling",
     "cost": 380,
     "supplier": "Precision Parts Co",
-    "notes": "Machined features: rectangular through slot chamfer 2sides through step triangular blind step",
+    "notes": "Machined features: 1x rectangular through slot 3x chamfer 2x 2sides through step 4x triangular blind step",
     "known_issues": "",
     "ppap_notes": ""
   },
@@ -281,7 +281,7 @@
     "process": "CNC Milling",
     "cost": 620,
     "supplier": "Precision Parts Co",
-    "notes": "Machined features: rectangular through slot slanted through step rectangular blind slot triangular blind step",
+    "notes": "Machined features: 1x rectangular through slot 6x slanted through step 5x rectangular blind slot 4x triangular blind step",
     "known_issues": "",
     "ppap_notes": ""
   },
@@ -292,7 +292,7 @@
     "process": "CNC Milling",
     "cost": 530,
     "supplier": "Midwest Fab",
-    "notes": "Machined features: rectangular blind step chamfer rectangular through slot 6sides pocket",
+    "notes": "Machined features: 2x rectangular blind step 6x chamfer 1x rectangular through slot 2x 6sides pocket",
     "known_issues": "",
     "ppap_notes": ""
   },
@@ -303,7 +303,7 @@
     "process": "CNC Milling",
     "cost": 470,
     "supplier": "Precision Parts Co",
-    "notes": "Machined features: 6sides pocket triangular pocket rectangular through slot triangular blind step",
+    "notes": "Machined features: 4x 6sides pocket 4x triangular pocket 1x rectangular through slot 4x triangular blind step",
     "known_issues": "",
     "ppap_notes": "PPAP Level 2 approved"
   },
@@ -314,7 +314,7 @@
     "process": "CNC Milling",
     "cost": 570,
     "supplier": "Acme Machining",
-    "notes": "Machined features: rectangular pocket triangular through slot rectangular blind slot",
+    "notes": "Machined features: 14x rectangular pocket 6x triangular through slot 5x rectangular blind slot",
     "known_issues": "",
     "ppap_notes": ""
   },
@@ -325,7 +325,7 @@
     "process": "CNC Milling",
     "cost": 480,
     "supplier": "Precision Parts Co",
-    "notes": "Machined features: rectangular blind step triangular through slot rectangular passage rectangular blind slot",
+    "notes": "Machined features: 2x rectangular blind step 6x triangular through slot 4x rectangular passage 5x rectangular blind slot",
     "known_issues": "",
     "ppap_notes": ""
   }

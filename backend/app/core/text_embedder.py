@@ -21,3 +21,18 @@ def embed_text(text: str) -> np.ndarray:
     model = _get_model()
     vec = model.encode(text, normalize_embeddings=True, convert_to_numpy=True)
     return vec.astype(np.float32)
+
+
+def histogram_to_text(histogram: dict[str, int]) -> str:
+    """Single canonical string form for a feature histogram, used by every
+    call site (query-time auto-text, index-time metadata, live library adds).
+
+    Two different phrasings of the same histogram (counts vs no counts,
+    underscores vs spaces) embed to measurably different vectors — even an
+    exact self-search wouldn't hit ~100% text similarity if the query and
+    the indexed document disagreed on formatting. Keeping one function
+    means that can't drift apart again.
+    """
+    return " ".join(
+        f"{count}x {feat.replace('_', ' ')}" for feat, count in histogram.items() if count > 0
+    )

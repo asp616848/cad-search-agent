@@ -34,6 +34,8 @@ BACKEND = ROOT / "backend"
 if str(BACKEND) not in sys.path:
     sys.path.insert(0, str(BACKEND))
 
+from app.core.text_embedder import histogram_to_text  # noqa: E402
+
 _SIG_RE = re.compile(r"^(.*)-(\d+)-(\d+)$")
 
 _MATERIALS = [
@@ -83,7 +85,7 @@ def _auto_metadata(
     material, process, supplier = _MATERIALS[h % len(_MATERIALS)]
     known_issue = _KNOWN_ISSUE_POOL[h % len(_KNOWN_ISSUE_POOL)]
     base_cost = 150 + (stats.get("face_count", 10) * 12) + (h % 300)
-    feat_tokens = " ".join(k.replace("_", " ") for k in histogram)
+    feat_tokens = histogram_to_text(histogram)
 
     return {
         "filename": f"{stem}.step",

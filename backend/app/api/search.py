@@ -107,9 +107,9 @@ async def search_cad(
         pool = min(idx.count(), max(k, _FUSION_POOL))
         geo_hits = idx.search_cad(geo_vec.numpy(), k=pool)
 
-        from app.core.text_embedder import embed_text
+        from app.core.text_embedder import embed_text, histogram_to_text
 
-        hist_tokens = " ".join(f"{count} {feat}" for feat, count in histogram.items() if count > 0)
+        hist_tokens = histogram_to_text(histogram)
         # User-typed text (if any) takes priority but both feed the same text
         # vector, so a combined CAD+text query narrows on both signals at once.
         user_typed = bool(text.strip())

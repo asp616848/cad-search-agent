@@ -98,7 +98,7 @@ async def index_part(
     try:
         from app.core.graph_builder import step_to_dgl_graph
         from app.core.occ_stats import compute as occ_stats
-        from app.core.text_embedder import embed_text
+        from app.core.text_embedder import embed_text, histogram_to_text
         from app.core.uvnet_embedder import embed
         from app.occwl.io import load_shell
 
@@ -117,7 +117,7 @@ async def index_part(
             meta.get("process", ""),
             meta.get("notes", ""),
             meta.get("known_issues", ""),
-            " ".join(f"{v} {k}" for k, v in histogram.items() if v > 0),
+            histogram_to_text(histogram),
         ]
         text_vec = embed_text(" ".join(p for p in text_parts if p))
 
