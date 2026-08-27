@@ -9,9 +9,9 @@ dist/
 # Data / generated (never commit index or DB)
 backend/app/data/*.faiss
 backend/app/data/parts.db
+backend/app/data/llm_cache.db
 backend/app/data/meshes/
 backend/app/data/thumbnails/
-data/eval_report.json
 
 # Model weights (large binary — copy locally from cad-feature-detection)
 backend/app/models/uvnet_weights.pt
@@ -19,6 +19,7 @@ backend/app/models/uvnet_weights.pt
 # Frontend
 frontend/node_modules/
 frontend/dist/
+frontend/tsconfig.tsbuildinfo
 
 # macOS
 .DS_Store

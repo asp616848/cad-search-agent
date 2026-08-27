@@ -37,8 +37,13 @@ def _reciprocal_rank(hits: list, relevant_names: set[str]) -> float:
 
 
 def _recall_at_k(hits: list, relevant_names: set[str], k: int) -> float:
+    """Recall@k normalized by min(k, |relevant|) — standard for small IR evals
+    where the relevant set can exceed k."""
+    if not relevant_names:
+        return 0.0
     found = sum(1 for h in hits[:k] if h.part.name in relevant_names)
-    return found / len(relevant_names) if relevant_names else 0.0
+    denom = min(k, len(relevant_names))
+    return found / denom
 
 
 def main() -> None:
@@ -103,9 +108,16 @@ def main() -> None:
             else (hits[0].text_score if hits else 0.0)
         )
 
-        # near-dup check
+        # near-dup check: a CAD self-query always ranks itself #1, so the
+        # duplicate partner is expected at rank 2 — scan top-3 for it.
         if q.get("near_dup"):
-            near_dup_ok = top_name in relevant and top_score >= q.get("min_score", 0.90)
+            min_score = q.get("min_score", 0.90)
+            dup_hit = next((h for h in hits[:3] if h.part.name in relevant), None)
+            if dup_hit is not None:
+                dup_score = dup_hit.geo_score if qtype == "cad" else dup_hit.text_score
+                near_dup_ok = dup_score >= min_score
+            else:
+                near_dup_ok = False
 
         row = {
             "id": q["id"],

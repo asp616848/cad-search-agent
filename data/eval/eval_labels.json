@@ -1,62 +1,105 @@
 [
   {
-    "id": "self_search_A",
+    "id": "self_search_block01",
     "type": "cad",
-    "step_path": "backend/tests/fixtures/partA.step",
-    "relevant_names": ["partA"],
+    "step_path": "data/demo_steps/0-0-0-10-10-23.step",
+    "relevant_names": ["Machined Block 01 (10x rectangular blind slot + 3x rectangular through slot)"],
+    "near_dup": false,
+    "description": "block01 must rank itself #1"
+  },
+  {
+    "id": "near_dup_pair",
+    "type": "cad",
+    "step_path": "data/demo_steps/0-0-0-10-10-23.step",
+    "relevant_names": ["Machined Block 02 (7x rectangular pocket + 5x rectangular blind slot)"],
     "near_dup": true,
-    "min_score": 0.99,
-    "description": "partA must rank itself #1 with geo >= 0.99"
+    "min_score": 0.90,
+    "description": "block01 and block02 are the verified near-duplicate pair (cosine 0.9103 via UV-Net); block01 self-matches rank 1, block02 expected rank 2"
   },
   {
-    "id": "self_search_B",
+    "id": "self_search_block15",
     "type": "cad",
-    "step_path": "backend/tests/fixtures/partB.step",
-    "relevant_names": ["partB"],
+    "step_path": "data/demo_steps/0-2-6-11-11-23.step",
+    "relevant_names": ["Machined Block 15 (14x rectangular pocket + 4x rectangular passage)"],
     "near_dup": false,
-    "description": "partB must rank itself #1"
-  },
-  {
-    "id": "self_search_C",
-    "type": "cad",
-    "step_path": "backend/tests/fixtures/partC.step",
-    "relevant_names": ["partC"],
-    "near_dup": false,
-    "description": "partC must rank itself #1"
+    "description": "block15 must rank itself #1"
   },
   {
     "id": "text_acme_supplier",
     "type": "text",
-    "query_text": "Acme Machining CNC milling aluminum",
-    "relevant_names": ["partA", "partC"],
-    "description": "text search for Acme supplier returns partA and partC"
+    "query_text": "Acme Machining CNC milling",
+    "relevant_names": [
+      "Machined Block 02 (7x rectangular pocket + 5x rectangular blind slot)",
+      "Machined Block 03 (5x rectangular through slot)",
+      "Machined Block 04 (14x rectangular pocket + 5x rectangular blind slot)",
+      "Machined Block 06 (5x rectangular blind slot + 3x rectangular through step)",
+      "Machined Block 09 (12x triangular through slot + 7x triangular passage)",
+      "Machined Block 11 (20x rectangular blind slot + 1x rectangular through slot)",
+      "Machined Block 12 (7x rectangular pocket + 4x 6sides pocket)",
+      "Machined Block 23 (4x 6sides pocket + 3x rectangular through step)",
+      "Machined Block 24 (5x rectangular blind slot + 2x 2sides through step)",
+      "Machined Block 29 (14x rectangular pocket + 6x triangular through slot)"
+    ],
+    "description": "text search for Acme supplier surfaces Acme-supplied parts (10 total)"
   },
   {
-    "id": "text_counterbore",
+    "id": "text_titanium",
     "type": "text",
-    "query_text": "M6 counterbore holes bracket",
-    "relevant_names": ["partA"],
-    "description": "text search for M6 counterbore returns partA"
+    "query_text": "Titanium Grade 5 CNC milling",
+    "relevant_names": [
+      "Machined Block 06 (5x rectangular blind slot + 3x rectangular through step)",
+      "Machined Block 09 (12x triangular through slot + 7x triangular passage)",
+      "Machined Block 11 (20x rectangular blind slot + 1x rectangular through slot)",
+      "Machined Block 12 (7x rectangular pocket + 4x 6sides pocket)",
+      "Machined Block 23 (4x 6sides pocket + 3x rectangular through step)",
+      "Machined Block 24 (5x rectangular blind slot + 2x 2sides through step)",
+      "Machined Block 29 (14x rectangular pocket + 6x triangular through slot)"
+    ],
+    "description": "text search for titanium returns titanium parts (7 total)"
   },
   {
-    "id": "text_thin_wall",
+    "id": "text_chamfer",
     "type": "text",
-    "query_text": "thin wall pocket CNC milling",
-    "relevant_names": ["partA", "partC"],
-    "description": "known_issues thin wall tokens match partA and partC"
+    "query_text": "chamfer machined feature",
+    "relevant_names": [
+      "Machined Block 08 (7x rectangular pocket + 6x chamfer)",
+      "Machined Block 19 (6x chamfer + 5x rectangular blind slot)",
+      "Machined Block 25 (4x triangular blind step + 3x chamfer)",
+      "Machined Block 27 (6x chamfer + 2x rectangular blind step)"
+    ],
+    "description": "text search for chamfer surfaces chamfer-featured parts (4 total)"
   },
   {
-    "id": "text_shaft",
+    "id": "text_precision_parts",
     "type": "text",
-    "query_text": "turned shaft cylindrical bearing seat stainless",
-    "relevant_names": ["partB"],
-    "description": "text search for shaft returns partB"
+    "query_text": "Precision Parts Co supplier",
+    "relevant_names": [
+      "Machined Block 01 (10x rectangular blind slot + 3x rectangular through slot)",
+      "Machined Block 05 (5x rectangular blind slot + 4x rectangular passage)",
+      "Machined Block 07 (5x rectangular blind slot + 4x triangular blind step)",
+      "Machined Block 10 (8x triangular pocket + 3x triangular through slot)",
+      "Machined Block 14 (5x rectangular blind slot + 4x triangular through slot)",
+      "Machined Block 15 (14x rectangular pocket + 4x rectangular passage)",
+      "Machined Block 16 (8x triangular blind step + 5x rectangular blind slot)",
+      "Machined Block 18 (5x triangular passage + 4x 2sides through step)",
+      "Machined Block 19 (6x chamfer + 5x rectangular blind slot)",
+      "Machined Block 20 (4x 6sides pocket + 3x rectangular through step)",
+      "Machined Block 21 (5x rectangular blind slot + 2x rectangular blind step)",
+      "Machined Block 25 (4x triangular blind step + 3x chamfer)",
+      "Machined Block 26 (6x slanted through step + 5x rectangular blind slot)",
+      "Machined Block 28 (4x 6sides pocket + 4x triangular pocket)",
+      "Machined Block 30 (6x triangular through slot + 5x rectangular blind slot)"
+    ],
+    "description": "text search for Precision Parts Co returns their parts (15 total)"
   },
   {
-    "id": "text_ppap",
+    "id": "text_triangular_pocket",
     "type": "text",
-    "query_text": "PPAP approved aerospace titanium",
-    "relevant_names": ["partC"],
-    "description": "PPAP + aerospace tokens match partC"
+    "query_text": "triangular pocket feature milling",
+    "relevant_names": [
+      "Machined Block 10 (8x triangular pocket + 3x triangular through slot)",
+      "Machined Block 28 (4x 6sides pocket + 4x triangular pocket)"
+    ],
+    "description": "text search for triangular pocket returns matching parts"
   }
 ]
