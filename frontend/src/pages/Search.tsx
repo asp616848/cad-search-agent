@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { SearchResult, SearchStage } from "@/api/client";
+import type { QueryMode, SearchResult, SearchStage } from "@/api/client";
 import { previewMesh, search } from "@/api/client";
 import CostingPrior from "@/components/CostingPrior";
 import ExplainPanel from "@/components/ExplainPanel";
@@ -58,7 +58,7 @@ export default function Search() {
 
   const noResults = stage === "done" && results.length === 0;
   const topScoreWeak = results.length > 0 && results[0].final_score < 0.55;
-  const queryName = file ? file.name : text || "your query";
+  const queryMode: QueryMode = file && text.trim() ? "cad_text" : file ? "cad" : "text";
 
   return (
     <div className="min-h-screen bg-ink-900/[0.015]">
@@ -150,7 +150,7 @@ export default function Search() {
                             selected={r}
                             queryHistogram={queryHistogram}
                           />
-                          <ExplainPanel result={r} queryName={queryName} />
+                          <ExplainPanel result={r} queryMode={queryMode} queryText={text} />
                         </div>
                       </div>
                     )}

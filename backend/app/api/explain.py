@@ -6,23 +6,26 @@ from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 from app.core.index_singleton import get_index
-from app.core.llm_adapter import explain
+from app.core.llm_adapter import _describe_query, explain
 
 router = APIRouter()
 
 
 class ExplainRequest(BaseModel):
     result_id: int
-    geo_score: float = 0.0
+    geo_score: float | None = None
     text_score: float = 0.0
-    query_name: str = "uploaded part"
+    query_mode: str = "cad"  # "cad" | "text" | "cad_text"
+    query_text: str = ""
 
 
 class AskRequest(BaseModel):
     result_id: int
     question: str
-    geo_score: float = 0.0
+    geo_score: float | None = None
     text_score: float = 0.0
+    query_mode: str = "cad"
+    query_text: str = ""
 
 
 def _result_meta(part) -> dict:
@@ -43,7 +46,7 @@ def post_explain(body: ExplainRequest):
         raise HTTPException(404, f"Part {body.result_id} not found")
 
     text = explain(
-        query_meta={"name": body.query_name},
+        query_meta={"mode": body.query_mode, "text": body.query_text},
         result_meta=_result_meta(part),
         scores={"geo": body.geo_score, "text": body.text_score},
     )
@@ -71,14 +74,20 @@ def post_ask(body: AskRequest):
         }
 
     meta = _result_meta(part)
+    query_meta = {"mode": body.query_mode, "text": body.query_text}
+    geo_sentence = (
+        "Geometry was not evaluated for this query (it was a text-only search)."
+        if body.geo_score is None
+        else f"Geometry similarity: {round(body.geo_score * 100)}%."
+    )
     prompt = (
-        f"A user is comparing a query CAD part to a candidate result part "
-        f"'{meta['name']}' ({meta['material']}, {meta['process']}). "
-        f"Geometry similarity: {round(body.geo_score * 100)}%. "
-        f"Text similarity: {round(body.text_score * 100)}%. "
+        f"{_describe_query(query_meta)} "
+        f"The candidate result is '{meta['name']}' ({meta['material']}, {meta['process']}). "
+        f"{geo_sentence} Text/metadata similarity: {round(body.text_score * 100)}%. "
         f"Notes: {meta['notes']}. Known issues: {meta['known_issues']}. "
         f'The user asks: "{body.question}"\n'
-        f"Answer concisely (2-4 sentences), grounded only in the info above."
+        f"Answer concisely (2-4 sentences), grounded only in the info above. Do not claim "
+        f"a geometry comparison happened if it did not."
     )
 
     try:

@@ -88,11 +88,14 @@ export async function previewMesh(file: File): Promise<string> {
   return URL.createObjectURL(blob);
 }
 
+export type QueryMode = "cad" | "text" | "cad_text";
+
 export async function explainResult(params: {
   resultId: number;
-  geoScore: number;
+  geoScore: number | null;
   textScore: number;
-  queryName?: string;
+  queryMode: QueryMode;
+  queryText?: string;
 }): Promise<string> {
   const res = await fetch("/api/explain", {
     method: "POST",
@@ -101,7 +104,8 @@ export async function explainResult(params: {
       result_id: params.resultId,
       geo_score: params.geoScore,
       text_score: params.textScore,
-      query_name: params.queryName ?? "uploaded part",
+      query_mode: params.queryMode,
+      query_text: params.queryText ?? "",
     }),
   });
   if (!res.ok) return _fail(res);
@@ -112,8 +116,10 @@ export async function explainResult(params: {
 export async function askAboutResult(params: {
   resultId: number;
   question: string;
-  geoScore: number;
+  geoScore: number | null;
   textScore: number;
+  queryMode: QueryMode;
+  queryText?: string;
 }): Promise<string> {
   const res = await fetch("/api/explain/ask", {
     method: "POST",
@@ -123,6 +129,8 @@ export async function askAboutResult(params: {
       question: params.question,
       geo_score: params.geoScore,
       text_score: params.textScore,
+      query_mode: params.queryMode,
+      query_text: params.queryText ?? "",
     }),
   });
   if (!res.ok) return _fail(res);

@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
-import type { SearchResult } from "@/api/client";
+import type { QueryMode, SearchResult } from "@/api/client";
 import { askAboutResult, explainResult } from "@/api/client";
 
 interface Props {
   result: SearchResult;
-  queryName: string;
+  queryMode: QueryMode;
+  queryText: string;
 }
 
-export default function ExplainPanel({ result, queryName }: Props) {
+export default function ExplainPanel({ result, queryMode, queryText }: Props) {
   const [explanation, setExplanation] = useState<string | null>(null);
   const [loadingExplain, setLoadingExplain] = useState(true);
   const [question, setQuestion] = useState("");
@@ -21,9 +22,10 @@ export default function ExplainPanel({ result, queryName }: Props) {
     setLoadingExplain(true);
     explainResult({
       resultId: result.id,
-      geoScore: result.geo_score ?? 0,
+      geoScore: result.geo_score,
       textScore: result.text_score ?? 0,
-      queryName,
+      queryMode,
+      queryText,
     })
       .then((text) => {
         if (!cancelled) setExplanation(text);
@@ -37,7 +39,7 @@ export default function ExplainPanel({ result, queryName }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [result.id, result.geo_score, result.text_score, queryName]);
+  }, [result.id, result.geo_score, result.text_score, queryMode, queryText]);
 
   async function handleAsk() {
     if (!question.trim()) return;
@@ -47,8 +49,10 @@ export default function ExplainPanel({ result, queryName }: Props) {
       const a = await askAboutResult({
         resultId: result.id,
         question: question.trim(),
-        geoScore: result.geo_score ?? 0,
+        geoScore: result.geo_score,
         textScore: result.text_score ?? 0,
+        queryMode,
+        queryText,
       });
       setAnswer(a);
     } catch (e: unknown) {
