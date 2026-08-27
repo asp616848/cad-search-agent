@@ -72,7 +72,7 @@ class SearchIndex:
     def __init__(self, db_path: Path = _DB_PATH) -> None:
         self.db_path = db_path
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
-        self._conn = sqlite3.connect(str(self.db_path))
+        self._conn = sqlite3.connect(str(self.db_path), check_same_thread=False)
         self._conn.execute(_CREATE_SQL)
         self._conn.commit()
         self.geo_index = faiss.IndexFlatIP(GEO_DIM)
