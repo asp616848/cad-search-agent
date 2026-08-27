@@ -1,8 +1,10 @@
 import { useState } from "react";
 import type { SearchResult, SearchStage } from "@/api/client";
 import { searchByFile, searchByText } from "@/api/client";
+import CostingPrior from "@/components/CostingPrior";
 import ResultCard from "@/components/ResultCard";
 import SearchBar from "@/components/SearchBar";
+import Viewer3D from "@/components/Viewer3D";
 
 export default function Search() {
   const [stage, setStage] = useState<SearchStage>("idle");
@@ -11,11 +13,13 @@ export default function Search() {
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [queryFile, setQueryFile] = useState<File | null>(null);
 
   async function handleFile(file: File) {
     setErrorMsg(null);
     setResults([]);
     setSelectedId(null);
+    setQueryFile(file);
     try {
       const data = await searchByFile(file, setStage);
       setResults(data.results);
@@ -32,6 +36,7 @@ export default function Search() {
     setErrorMsg(null);
     setResults([]);
     setSelectedId(null);
+    setQueryFile(null);
     setStage("searching");
     try {
       const data = await searchByText(q);
@@ -103,18 +108,48 @@ export default function Search() {
           {/* Result cards */}
           {results.length > 0 && (
             <div className="space-y-3">
-              {results.map((r, i) => (
-                <ResultCard
-                  key={r.id}
-                  result={r}
-                  queryHistogram={queryHistogram}
-                  rank={i + 1}
-                  selected={selectedId === r.id}
-                  onClick={() =>
-                    setSelectedId(selectedId === r.id ? null : r.id)
-                  }
-                />
-              ))}
+              {results.map((r, i) => {
+                const isSelected = selectedId === r.id;
+                const resultMeshUrl = r.id ? `/api/mesh/${r.id}` : undefined;
+                return (
+                  <div key={r.id}>
+                    <ResultCard
+                      result={r}
+                      queryHistogram={queryHistogram}
+                      rank={i + 1}
+                      selected={isSelected}
+                      onClick={() =>
+                        setSelectedId(isSelected ? null : r.id)
+                      }
+                    />
+                    {/* Expanded panel */}
+                    {isSelected && (
+                      <div className="mt-2 space-y-4 border border-gray-200 rounded-xl p-4 bg-white">
+                        {/* Duplicate banner */}
+                        {r.badge === "near-duplicate" && (
+                          <div className="bg-orange-50 border border-orange-200 rounded-lg px-4 py-2 text-sm text-orange-800">
+                            This looks like an existing part — geo similarity {Math.round(r.geo_score * 100)}%.
+                            Check the library before creating a new quote.
+                          </div>
+                        )}
+
+                        {/* 3D viewer */}
+                        <Viewer3D
+                          resultGltfUrl={resultMeshUrl}
+                          resultName={r.name}
+                        />
+
+                        {/* Costing prior */}
+                        <CostingPrior
+                          results={results}
+                          selected={r}
+                          queryHistogram={queryHistogram}
+                        />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           )}
 
