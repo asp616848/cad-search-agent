@@ -43,6 +43,19 @@ def _build_text_doc(meta: dict) -> str:
     return " ".join(p for p in parts if p)
 
 
+def _export_gltf(step_path: Path, out_path: Path) -> None:
+    """Tessellate STEP and export as glb. Raises on failure."""
+    from OCC.Core.BRepMesh import BRepMesh_IncrementalMesh
+    from OCC.Extend.DataExchange import write_gltf_file
+
+    solids = load_shell(str(step_path))
+    if not solids:
+        raise ValueError("No solids loaded")
+    shape = solids[0].topods_shape()
+    BRepMesh_IncrementalMesh(shape, 0.1, False, 0.5).Perform()
+    write_gltf_file(shape, str(out_path))
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--step_dir", required=True, type=Path)
@@ -70,6 +83,9 @@ def main() -> None:
     step_files = sorted(step_dir.glob("*.step")) + sorted(step_dir.glob("*.stp"))
     print(f"Found {len(step_files)} STEP files in {step_dir}")
 
+    mesh_dir = out_dir / "meshes"
+    mesh_dir.mkdir(exist_ok=True)
+
     idx = SearchIndex(db_path=out_dir / "parts.db")
     succeeded, failed = [], []
 
@@ -82,12 +98,12 @@ def main() -> None:
             geo_vec, histogram = embed(graph)
 
             solids = load_shell(str(step_path))
-            stats = occ_stats(solids[0].topods_shape()) if solids else {}  # type: ignore[attr-defined]
+            stats = occ_stats(solids[0].topods_shape()) if solids else {}
 
             text_doc = _build_text_doc(meta)
             text_vec = embed_text(text_doc)
 
-            idx.add(
+            part_id = idx.add(
                 name=meta.get("name", step_path.stem),
                 geo_vec=geo_vec.numpy(),
                 text_vec=text_vec,
@@ -101,6 +117,14 @@ def main() -> None:
                 histogram=histogram,
                 occ_stats=stats,
             )
+
+            # glTF export (best-effort — failure does not abort indexing)
+            glb_path = mesh_dir / f"{part_id}.glb"
+            try:
+                _export_gltf(step_path, glb_path)
+            except Exception as e:
+                print(f"  WARN  glTF export failed for {fname}: {e}")
+
             elapsed = time.time() - t0
             print(f"  OK  {fname} ({elapsed:.1f}s)")
             succeeded.append(fname)
