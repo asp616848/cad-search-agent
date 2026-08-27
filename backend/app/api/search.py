@@ -112,8 +112,20 @@ async def search_cad(
         hist_tokens = " ".join(f"{count} {feat}" for feat, count in histogram.items() if count > 0)
         # User-typed text (if any) takes priority but both feed the same text
         # vector, so a combined CAD+text query narrows on both signals at once.
+        user_typed = bool(text.strip())
         text_query = f"{text.strip()} {hist_tokens}".strip()
         text_vec = embed_text(text_query) if text_query else None
+
+        # What actually produced the text signal — the UI/LLM must not claim
+        # "geometry only" when the histogram alone drove a real text score.
+        if user_typed and hist_tokens:
+            text_source = "user_and_histogram"
+        elif user_typed:
+            text_source = "user"
+        elif hist_tokens:
+            text_source = "auto_histogram"
+        else:
+            text_source = "none"
 
         if text_vec is not None:
             text_hits = idx.search_text(text_vec, k=pool)
@@ -145,6 +157,7 @@ async def search_cad(
                 "results": results,
                 "query_histogram": histogram,
                 "query_occ_stats": query_stats,
+                "text_source": text_source,
                 "latency_ms": latency_ms,
             }
         )
@@ -168,5 +181,6 @@ def search_text(body: TextQuery):
     latency_ms = round((time.perf_counter() - t0) * 1000)
     return {
         "results": [_hit_to_dict(h, geo_available=False) for h in hits],
+        "text_source": "user",
         "latency_ms": latency_ms,
     }

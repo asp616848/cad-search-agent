@@ -1,9 +1,10 @@
 import { useState } from "react";
-import type { SearchResult } from "@/api/client";
+import type { SearchResult, TextSource } from "@/api/client";
 
 interface Props {
   result: SearchResult;
   queryHistogram?: Record<string, number>;
+  textSource?: TextSource;
   rank: number;
   onClick?: () => void;
   selected?: boolean;
@@ -82,6 +83,7 @@ function Thumbnail({ resultId }: { resultId: number }) {
 export default function ResultCard({
   result,
   queryHistogram,
+  textSource,
   rank,
   onClick,
   selected,
@@ -148,6 +150,11 @@ export default function ResultCard({
           <div className="space-y-1.5 mb-3">
             <ScoreBar label="Geometry" value={result.geo_score} color="bg-ink-800" />
             <ScoreBar label="Text" value={result.text_score} color="bg-brand-500" />
+            {textSource === "auto_histogram" && (
+              <p className="text-[11px] text-ink-400 italic">
+                Text score is auto-derived from your file's own features (no text typed)
+              </p>
+            )}
           </div>
 
           {/* Feature chips */}

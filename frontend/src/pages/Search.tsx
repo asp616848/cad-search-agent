@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import type { QueryMode, SearchResult, SearchStage } from "@/api/client";
+import type { SearchResult, SearchStage, TextSource } from "@/api/client";
 import { previewMesh, search } from "@/api/client";
 import CostingPrior from "@/components/CostingPrior";
 import ExplainPanel from "@/components/ExplainPanel";
@@ -14,6 +14,7 @@ export default function Search() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [queryHistogram, setQueryHistogram] = useState<Record<string, number>>({});
   const [queryOccStats, setQueryOccStats] = useState<Record<string, number>>({});
+  const [textSource, setTextSource] = useState<TextSource>("none");
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -50,6 +51,7 @@ export default function Search() {
       setResults(data.results);
       setQueryHistogram(data.query_histogram);
       setQueryOccStats(data.query_occ_stats);
+      setTextSource(data.text_source);
       setLatencyMs(data.latency_ms);
       setStage("done");
     } catch (e: unknown) {
@@ -60,7 +62,6 @@ export default function Search() {
 
   const noResults = stage === "done" && results.length === 0;
   const topScoreWeak = results.length > 0 && results[0].final_score < 0.55;
-  const queryMode: QueryMode = file && text.trim() ? "cad_text" : file ? "cad" : "text";
 
   return (
     <div className="min-h-screen bg-ink-900/[0.015]">
@@ -126,6 +127,7 @@ export default function Search() {
                     <ResultCard
                       result={r}
                       queryHistogram={queryHistogram}
+                      textSource={textSource}
                       rank={i + 1}
                       selected={isSelected}
                       onClick={() => setSelectedId(isSelected ? null : r.id)}
@@ -154,7 +156,7 @@ export default function Search() {
                           />
                           <ExplainPanel
                             result={r}
-                            queryMode={queryMode}
+                            textSource={textSource}
                             queryText={text}
                             queryHistogram={queryHistogram}
                             queryOccStats={queryOccStats}

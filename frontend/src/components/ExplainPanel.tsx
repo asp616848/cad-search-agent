@@ -1,10 +1,10 @@
 import { useEffect, useState } from "react";
-import type { QueryMode, SearchResult } from "@/api/client";
+import type { SearchResult, TextSource } from "@/api/client";
 import { askAboutResult, explainResult } from "@/api/client";
 
 interface Props {
   result: SearchResult;
-  queryMode: QueryMode;
+  textSource: TextSource;
   queryText: string;
   queryHistogram: Record<string, number>;
   queryOccStats: Record<string, number>;
@@ -12,7 +12,7 @@ interface Props {
 
 export default function ExplainPanel({
   result,
-  queryMode,
+  textSource,
   queryText,
   queryHistogram,
   queryOccStats,
@@ -32,7 +32,7 @@ export default function ExplainPanel({
       resultId: result.id,
       geoScore: result.geo_score,
       textScore: result.text_score ?? 0,
-      queryMode,
+      textSource,
       queryText,
       queryHistogram,
       queryOccStats,
@@ -50,7 +50,7 @@ export default function ExplainPanel({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [result.id, result.geo_score, result.text_score, queryMode, queryText]);
+  }, [result.id, result.geo_score, result.text_score, textSource, queryText]);
 
   async function handleAsk() {
     if (!question.trim()) return;
@@ -62,7 +62,7 @@ export default function ExplainPanel({
         question: question.trim(),
         geoScore: result.geo_score,
         textScore: result.text_score ?? 0,
-        queryMode,
+        textSource,
         queryText,
         queryHistogram,
         queryOccStats,
@@ -80,6 +80,13 @@ export default function ExplainPanel({
       <h3 className="font-semibold text-ink-800 text-xs uppercase tracking-wide">
         Why this match
       </h3>
+
+      {textSource === "auto_histogram" && (
+        <p className="text-ink-400 text-xs italic">
+          No text was typed — the Text score compares this file's own detected features
+          against each result's description.
+        </p>
+      )}
 
       {loadingExplain && (
         <p className="text-ink-400 text-xs italic">Generating explanation…</p>

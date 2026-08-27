@@ -18,10 +18,13 @@ export interface SearchResult {
   thumb_path: string;
 }
 
+export type TextSource = "none" | "auto_histogram" | "user" | "user_and_histogram";
+
 export interface SearchResponse {
   results: SearchResult[];
   query_histogram: Record<string, number>;
   query_occ_stats: Record<string, number>;
+  text_source: TextSource;
   latency_ms: number;
 }
 
@@ -76,7 +79,7 @@ export async function search(
   if (!res.ok) return _fail(res);
   onStage?.("done");
   const data = await res.json();
-  return { ...data, query_histogram: {}, query_occ_stats: {} };
+  return { ...data, query_histogram: {}, query_occ_stats: {}, text_source: "user" };
 }
 
 /** Converts an uploaded STEP to a glb blob URL for the query-side 3D viewer.
@@ -90,13 +93,11 @@ export async function previewMesh(file: File): Promise<string> {
   return URL.createObjectURL(blob);
 }
 
-export type QueryMode = "cad" | "text" | "cad_text";
-
 export async function explainResult(params: {
   resultId: number;
   geoScore: number | null;
   textScore: number;
-  queryMode: QueryMode;
+  textSource: TextSource;
   queryText?: string;
   queryHistogram?: Record<string, number>;
   queryOccStats?: Record<string, number>;
@@ -108,7 +109,7 @@ export async function explainResult(params: {
       result_id: params.resultId,
       geo_score: params.geoScore,
       text_score: params.textScore,
-      query_mode: params.queryMode,
+      text_source: params.textSource,
       query_text: params.queryText ?? "",
       query_histogram: params.queryHistogram ?? {},
       query_occ_stats: params.queryOccStats ?? {},
@@ -124,7 +125,7 @@ export async function askAboutResult(params: {
   question: string;
   geoScore: number | null;
   textScore: number;
-  queryMode: QueryMode;
+  textSource: TextSource;
   queryText?: string;
   queryHistogram?: Record<string, number>;
   queryOccStats?: Record<string, number>;
@@ -137,7 +138,7 @@ export async function askAboutResult(params: {
       question: params.question,
       geo_score: params.geoScore,
       text_score: params.textScore,
-      query_mode: params.queryMode,
+      text_source: params.textSource,
       query_text: params.queryText ?? "",
       query_histogram: params.queryHistogram ?? {},
       query_occ_stats: params.queryOccStats ?? {},

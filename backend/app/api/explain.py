@@ -16,7 +16,9 @@ class ExplainRequest(BaseModel):
     result_id: int
     geo_score: float | None = None
     text_score: float = 0.0
-    query_mode: str = "cad"  # "cad" | "text" | "cad_text"
+    # "none" | "auto_histogram" | "user" | "user_and_histogram" — ground
+    # truth from the search response, not a frontend guess.
+    text_source: str = "none"
     query_text: str = ""
     query_histogram: dict[str, int] = {}
     query_occ_stats: dict = {}
@@ -27,7 +29,7 @@ class AskRequest(BaseModel):
     question: str
     geo_score: float | None = None
     text_score: float = 0.0
-    query_mode: str = "cad"
+    text_source: str = "none"
     query_text: str = ""
     query_histogram: dict[str, int] = {}
     query_occ_stats: dict = {}
@@ -59,7 +61,7 @@ def post_explain(body: ExplainRequest):
 
     text = explain(
         query_meta={
-            "mode": body.query_mode,
+            "text_source": body.text_source,
             "text": body.query_text,
             "histogram": body.query_histogram,
             "occ_stats": body.query_occ_stats,
@@ -93,19 +95,20 @@ def post_ask(body: AskRequest):
 
     meta = _result_meta(part)
     query_meta = {
-        "mode": body.query_mode,
+        "text_source": body.text_source,
         "text": body.query_text,
         "histogram": body.query_histogram,
         "occ_stats": body.query_occ_stats,
     }
+    geo_present = body.geo_score is not None
     geo_sentence = (
         "Geometry was not evaluated for this query (it was a text-only search)."
-        if body.geo_score is None
+        if not geo_present
         else f"Geometry similarity: {round(body.geo_score * 100)}%."
     )
     result_facts = _facts_line(meta["histogram"], meta["occ_stats"])
     prompt = (
-        f"{_describe_query(query_meta)} "
+        f"{_describe_query(query_meta, geo_present)} "
         f"The candidate result is '{meta['name']}' ({meta['material']}, {meta['process']}) "
         f"with {result_facts}. "
         f"{geo_sentence} Text/metadata similarity: {round(body.text_score * 100)}%. "

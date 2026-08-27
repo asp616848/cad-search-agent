@@ -73,14 +73,23 @@ def _facts_line(histogram: dict, occ_stats: dict) -> str:
 def _template(query_meta: dict, result_meta: dict, scores: dict) -> str:
     geo = scores.get("geo")
     text_pct = round(scores.get("text", 0) * 100)
+    text_source = query_meta.get("text_source", "none")
     name = result_meta.get("name", "this part")
     material = result_meta.get("material", "")
     process = result_meta.get("process", "")
     mat_proc = f"{material} {process}".strip() or "similar process"
 
-    text_sentence = (
-        f"Text match {text_pct}% — {name} is a {mat_proc} part with overlapping metadata tokens."
-    )
+    if text_source == "auto_histogram":
+        text_sentence = (
+            f"Text match {text_pct}% — no text was typed; this compares the query file's "
+            f"own detected features against {name}'s stored description ({mat_proc})."
+        )
+    else:
+        text_sentence = (
+            f"Text match {text_pct}% — {name} is a {mat_proc} part with overlapping "
+            f"metadata tokens."
+        )
+
     if geo is None:
         return (
             f"This was a text-only search — no CAD file was uploaded, so no geometry "
@@ -93,36 +102,64 @@ def _template(query_meta: dict, result_meta: dict, scores: dict) -> str:
     )
 
 
-def _describe_query(query_meta: dict) -> str:
+def _describe_query(query_meta: dict, geo_present: bool) -> str:
     """Describe what the user actually searched with, so the LLM never
-    invents a CAD comparison that didn't happen (or vice versa)."""
-    mode = query_meta.get("mode", "cad")
+    invents a CAD comparison that didn't happen (or vice versa), and never
+    claims "geometry only" when a text signal was in fact used.
+
+    text_source is the ground truth from the backend (not a frontend guess):
+      "none"              — no text signal at all
+      "auto_histogram"    — no text typed; text score comes from comparing
+                             the query file's OWN detected features against
+                             each candidate's stored description
+      "user"              — user typed text (no CAD file, or its histogram
+                             was empty)
+      "user_and_histogram"— user typed text AND the query file's histogram
+                             both fed the same text query
+    """
+    text_source = query_meta.get("text_source", "none")
     text_query = query_meta.get("text", "")
     facts = _facts_line(query_meta.get("histogram", {}), query_meta.get("occ_stats", {}))
 
-    if mode == "text":
+    if not geo_present:
         return (
             f'The user ran a TEXT-ONLY search for "{text_query}" — no STEP/CAD file was '
             f"uploaded, so no geometry comparison was performed at all."
         )
-    if mode == "cad_text":
+
+    cad_clause = f"The user uploaded a STEP/CAD file (query {facts})"
+    if text_source == "user_and_histogram":
         return (
-            f'The user uploaded a STEP/CAD file (query {facts}) and also typed "{text_query}" '
-            f"as narrowing text — both geometry and text were compared."
+            f'{cad_clause} and also typed "{text_query}" as narrowing text. Both geometry '
+            f"and text were compared — the text side blends the typed words with the query "
+            f"file's own detected features."
         )
-    return f"The user uploaded a STEP/CAD file (query {facts}) and searched by geometry only."
+    if text_source == "user":
+        return (
+            f'{cad_clause} and also typed "{text_query}" as narrowing text — both geometry '
+            f"and text were compared."
+        )
+    if text_source == "auto_histogram":
+        return (
+            f"{cad_clause}. The user typed no text — the system automatically built a text "
+            f"query from THIS FILE's own detected machining features and compared it against "
+            f"each candidate's stored description. Any 'text similarity' below reflects "
+            f"feature-metadata overlap with the query's own geometry, not a hand-typed search."
+        )
+    return f"{cad_clause} with no detected machining features to build a text query from — geometry was the only signal used."
 
 
 def _build_explain_prompt(query_meta: dict, result_meta: dict, scores: dict) -> str:
     geo = scores.get("geo")
+    geo_present = geo is not None
     geo_sentence = (
         "Geometry was not evaluated for this query (see above)."
-        if geo is None
+        if not geo_present
         else f"Geometry similarity: {round(geo * 100)}%."
     )
     result_facts = _facts_line(result_meta.get("histogram", {}), result_meta.get("occ_stats", {}))
     return (
-        f"{_describe_query(query_meta)} "
+        f"{_describe_query(query_meta, geo_present)} "
         f"The candidate result is '{result_meta.get('name')}' "
         f"({result_meta.get('material', '')}, {result_meta.get('process', '')}) "
         f"with {result_facts}. "
