@@ -8,18 +8,32 @@ interface Props {
   selected?: boolean;
 }
 
-function ScoreBar({ label, value, color }: { label: string; value: number; color: string }) {
+function ScoreBar({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number | null;
+  color: string;
+}) {
+  if (value === null) {
+    return (
+      <div className="flex items-center gap-2 text-xs">
+        <span className="w-16 text-ink-400 shrink-0">{label}</span>
+        <div className="flex-1 bg-ink-400/10 rounded-full h-1.5" />
+        <span className="w-8 text-right font-mono text-ink-400">N/A</span>
+      </div>
+    );
+  }
   const pct = Math.round(value * 100);
   return (
     <div className="flex items-center gap-2 text-xs">
-      <span className="w-16 text-gray-500 shrink-0">{label}</span>
-      <div className="flex-1 bg-gray-100 rounded-full h-1.5 overflow-hidden">
-        <div
-          className={`h-full rounded-full ${color}`}
-          style={{ width: `${pct}%` }}
-        />
+      <span className="w-16 text-ink-400 shrink-0">{label}</span>
+      <div className="flex-1 bg-ink-400/10 rounded-full h-1.5 overflow-hidden">
+        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
       </div>
-      <span className="w-8 text-right font-mono text-gray-700">{pct}%</span>
+      <span className="w-8 text-right font-mono text-ink-800">{pct}%</span>
     </div>
   );
 }
@@ -36,9 +50,7 @@ function FeatureChip({
   return (
     <span
       className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${
-        overlap
-          ? "bg-green-100 text-green-800"
-          : "bg-gray-100 text-gray-500"
+        overlap ? "bg-green-100 text-green-800" : "bg-ink-400/10 text-ink-400"
       }`}
     >
       {label}
@@ -55,35 +67,34 @@ export default function ResultCard({
   selected,
 }: Props) {
   const badge = result.badge;
-
   const histEntries = Object.entries(result.histogram).filter(([, v]) => v > 0);
 
   return (
     <div
       className={`bg-white rounded-xl border p-4 cursor-pointer transition-shadow hover:shadow-md ${
-        selected ? "border-blue-500 shadow-md" : "border-gray-200"
+        selected ? "border-brand-500 shadow-md" : "border-ink-400/20"
       }`}
       onClick={onClick}
     >
       {/* Header row */}
       <div className="flex items-start justify-between gap-2 mb-3">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="text-xs font-mono text-gray-400 shrink-0">#{rank}</span>
-          <span className="font-semibold text-gray-900 truncate">{result.name}</span>
+          <span className="text-xs font-mono text-ink-400 shrink-0">#{rank}</span>
+          <span className="font-semibold text-ink-900 truncate">{result.name}</span>
         </div>
         <div className="flex items-center gap-1.5 shrink-0">
           {badge === "near-duplicate" && (
-            <span className="px-2 py-0.5 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
+            <span className="px-2 py-0.5 bg-brand-100 text-brand-700 text-xs font-medium rounded-full">
               Near-duplicate
             </span>
           )}
           {badge === "weak-match" && (
-            <span className="px-2 py-0.5 bg-gray-100 text-gray-500 text-xs font-medium rounded-full">
+            <span className="px-2 py-0.5 bg-ink-400/10 text-ink-600 text-xs font-medium rounded-full">
               Weak match
             </span>
           )}
           {result.cost > 0 && (
-            <span className="text-sm font-semibold text-gray-700">
+            <span className="text-sm font-semibold text-ink-800">
               ${result.cost.toLocaleString()}
             </span>
           )}
@@ -93,17 +104,17 @@ export default function ResultCard({
       {/* Meta pills */}
       <div className="flex flex-wrap gap-1.5 mb-3">
         {result.material && (
-          <span className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded">
+          <span className="px-2 py-0.5 bg-ink-900/5 text-ink-800 text-xs rounded">
             {result.material}
           </span>
         )}
         {result.process && (
-          <span className="px-2 py-0.5 bg-purple-50 text-purple-700 text-xs rounded">
+          <span className="px-2 py-0.5 bg-brand-50 text-brand-700 text-xs rounded">
             {result.process}
           </span>
         )}
         {result.supplier && (
-          <span className="px-2 py-0.5 bg-gray-50 text-gray-600 text-xs rounded">
+          <span className="px-2 py-0.5 bg-ink-400/10 text-ink-600 text-xs rounded">
             {result.supplier}
           </span>
         )}
@@ -111,8 +122,8 @@ export default function ResultCard({
 
       {/* Dual score bars */}
       <div className="space-y-1.5 mb-3">
-        <ScoreBar label="Geometry" value={result.geo_score} color="bg-blue-500" />
-        <ScoreBar label="Text" value={result.text_score} color="bg-violet-400" />
+        <ScoreBar label="Geometry" value={result.geo_score} color="bg-ink-800" />
+        <ScoreBar label="Text" value={result.text_score} color="bg-brand-500" />
       </div>
 
       {/* Feature chips */}

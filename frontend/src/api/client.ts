@@ -9,22 +9,17 @@ export interface SearchResult {
   known_issues: string;
   ppap_notes: string;
   histogram: Record<string, number>;
-  geo_score: number;
-  text_score: number;
+  geo_score: number | null;
+  text_score: number | null;
   final_score: number;
   badge: "near-duplicate" | "weak-match" | null;
   mesh_path: string;
   thumb_path: string;
 }
 
-export interface CadSearchResponse {
+export interface SearchResponse {
   results: SearchResult[];
   query_histogram: Record<string, number>;
-  latency_ms: number;
-}
-
-export interface TextSearchResponse {
-  results: SearchResult[];
   latency_ms: number;
 }
 
@@ -44,35 +39,95 @@ export type SearchStage =
   | "done"
   | "error";
 
-export async function searchByFile(
-  file: File,
-  onStage: (s: SearchStage) => void
-): Promise<CadSearchResponse> {
-  onStage("reading");
-  const form = new FormData();
-  form.append("file", file);
-  onStage("graph");
-  const res = await fetch("/api/search/cad", { method: "POST", body: form });
-  onStage("searching");
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail ?? "Search failed");
-  }
-  onStage("done");
-  return res.json();
+async function _fail(res: Response): Promise<never> {
+  const err = await res.json().catch(() => ({ detail: res.statusText }));
+  throw new Error(err.detail ?? "Request failed");
 }
 
-export async function searchByText(q: string): Promise<TextSearchResponse> {
+/** Combined CAD + optional text query. If `file` is omitted, falls back to
+ * a pure text query (no query geometry, geo_score comes back null). */
+export async function search(
+  params: { file?: File; text?: string; k?: number },
+  onStage?: (s: SearchStage) => void
+): Promise<SearchResponse> {
+  const { file, text = "", k = 5 } = params;
+
+  if (file) {
+    onStage?.("reading");
+    const form = new FormData();
+    form.append("file", file);
+    if (text.trim()) form.append("text", text.trim());
+    onStage?.("graph");
+    const res = await fetch(`/api/search/cad?k=${k}`, { method: "POST", body: form });
+    onStage?.("searching");
+    if (!res.ok) return _fail(res);
+    onStage?.("done");
+    return res.json();
+  }
+
+  onStage?.("searching");
   const res = await fetch("/api/search/text", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ q }),
+    body: JSON.stringify({ q: text, k }),
   });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({ detail: res.statusText }));
-    throw new Error(err.detail ?? "Search failed");
-  }
-  return res.json();
+  if (!res.ok) return _fail(res);
+  onStage?.("done");
+  const data = await res.json();
+  return { ...data, query_histogram: {} };
+}
+
+/** Converts an uploaded STEP to a glb blob URL for the query-side 3D viewer.
+ * Caller must URL.revokeObjectURL() when done. */
+export async function previewMesh(file: File): Promise<string> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch("/api/mesh/preview", { method: "POST", body: form });
+  if (!res.ok) return _fail(res);
+  const blob = await res.blob();
+  return URL.createObjectURL(blob);
+}
+
+export async function explainResult(params: {
+  resultId: number;
+  geoScore: number;
+  textScore: number;
+  queryName?: string;
+}): Promise<string> {
+  const res = await fetch("/api/explain", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      result_id: params.resultId,
+      geo_score: params.geoScore,
+      text_score: params.textScore,
+      query_name: params.queryName ?? "uploaded part",
+    }),
+  });
+  if (!res.ok) return _fail(res);
+  const data = await res.json();
+  return data.explanation;
+}
+
+export async function askAboutResult(params: {
+  resultId: number;
+  question: string;
+  geoScore: number;
+  textScore: number;
+}): Promise<string> {
+  const res = await fetch("/api/explain/ask", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      result_id: params.resultId,
+      question: params.question,
+      geo_score: params.geoScore,
+      text_score: params.textScore,
+    }),
+  });
+  if (!res.ok) return _fail(res);
+  const data = await res.json();
+  return data.answer;
 }
 
 export async function getHealth(): Promise<HealthResponse> {

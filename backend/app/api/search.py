@@ -1,4 +1,4 @@
-"""POST /api/search/cad  and  POST /api/search/text"""
+"""POST /api/search/cad (file, optional text) and POST /api/search/text."""
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ import tempfile
 import time
 from pathlib import Path
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 
@@ -18,13 +18,20 @@ router = APIRouter()
 
 _MAX_BYTES = MAX_UPLOAD_MB * 1024 * 1024
 
+# Internal retrieval size per modality before fusion. Fusing over only the
+# display k causes parts absent from one modality's top-k to default to a
+# fusion score of 0, which looks like "0% similarity" rather than "wasn't
+# in this shortlist". Pooling a larger candidate set (capped at index size)
+# gives every candidate a real score from both modalities.
+_FUSION_POOL = 50
+
 
 class TextQuery(BaseModel):
     q: str
     k: int = TOP_K
 
 
-def _hit_to_dict(hit: SearchHit) -> dict:
+def _hit_to_dict(hit: SearchHit, geo_available: bool = True) -> dict:
     part = hit.part
     badge = None
     if hit.is_duplicate:
@@ -43,7 +50,7 @@ def _hit_to_dict(hit: SearchHit) -> dict:
         "known_issues": part.known_issues,
         "ppap_notes": part.ppap_notes,
         "histogram": part.histogram,
-        "geo_score": round(hit.geo_score, 4),
+        "geo_score": round(hit.geo_score, 4) if geo_available else None,
         "text_score": round(hit.text_score, 4),
         "final_score": round(hit.final_score, 4),
         "badge": badge,
@@ -55,6 +62,7 @@ def _hit_to_dict(hit: SearchHit) -> dict:
 @router.post("/search/cad")
 async def search_cad(
     file: UploadFile = File(...),
+    text: str = Form(default=""),
     k: int = Query(default=TOP_K, ge=1, le=20),
 ):
     suffix = Path(file.filename or "").suffix.lower()
@@ -87,15 +95,19 @@ async def search_cad(
             ) from e
 
         idx = get_index()
-        geo_hits = idx.search_cad(geo_vec.numpy(), k=k)
+        pool = min(idx.count(), max(k, _FUSION_POOL))
+        geo_hits = idx.search_cad(geo_vec.numpy(), k=pool)
 
         from app.core.text_embedder import embed_text
 
-        hist_tokens = " ".join(f"{v} {k}" for k, v in histogram.items() if v > 0)
-        text_vec = embed_text(hist_tokens) if hist_tokens else None
+        hist_tokens = " ".join(f"{count} {feat}" for feat, count in histogram.items() if count > 0)
+        # User-typed text (if any) takes priority but both feed the same text
+        # vector, so a combined CAD+text query narrows on both signals at once.
+        text_query = f"{text.strip()} {hist_tokens}".strip()
+        text_vec = embed_text(text_query) if text_query else None
 
         if text_vec is not None:
-            text_hits = idx.search_text(text_vec, k=k)
+            text_hits = idx.search_text(text_vec, k=pool)
             geo_scores = {h.part.id: h.geo_score for h in geo_hits}
             text_scores = {h.part.id: h.text_score for h in text_hits}
             fused = fuse(geo_scores, text_scores)
@@ -144,4 +156,7 @@ def search_text(body: TextQuery):
     for h in hits:
         h.final_score = h.text_score
     latency_ms = round((time.perf_counter() - t0) * 1000)
-    return {"results": [_hit_to_dict(h) for h in hits], "latency_ms": latency_ms}
+    return {
+        "results": [_hit_to_dict(h, geo_available=False) for h in hits],
+        "latency_ms": latency_ms,
+    }

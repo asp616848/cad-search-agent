@@ -17,23 +17,24 @@ function buildCopyText(r: SearchResult, band: string, supplierHint: string): str
     r.notes && `Notes: ${r.notes}`,
     r.known_issues && `Known issues: ${r.known_issues}`,
     r.ppap_notes && `PPAP: ${r.ppap_notes}`,
-    `Geometry score: ${Math.round(r.geo_score * 100)}%`,
+    r.geo_score !== null && `Geometry score: ${Math.round(r.geo_score * 100)}%`,
   ]
     .filter(Boolean)
     .join("\n");
 }
 
 export default function CostingPrior({ results, selected, queryHistogram }: Props) {
-  // Cost band — top results with geo >= 0.7
+  // Cost band — top results with similarity >= 0.7 (geo when available, else
+  // the fused/text score, so this still works for pure text-only queries).
   const qualifiedCosts = results
-    .filter((r) => r.geo_score >= 0.7 && r.cost > 0)
+    .filter((r) => (r.geo_score ?? r.final_score) >= 0.7 && r.cost > 0)
     .map((r) => r.cost);
   const costBand =
     qualifiedCosts.length >= 2
       ? `$${Math.min(...qualifiedCosts).toLocaleString()}–$${Math.max(...qualifiedCosts).toLocaleString()} (n=${qualifiedCosts.length})`
       : qualifiedCosts.length === 1
-      ? `$${qualifiedCosts[0].toLocaleString()} (n=1)`
-      : null;
+        ? `$${qualifiedCosts[0].toLocaleString()} (n=1)`
+        : null;
 
   // Supplier hint — most common supplier in top-3
   const top3 = results.slice(0, 3);
@@ -51,7 +52,10 @@ export default function CostingPrior({ results, selected, queryHistogram }: Prop
     ? selected.known_issues
         .split(/[,;.]/)
         .map((s) => s.trim())
-        .filter((s) => s.length > 0 && Object.keys(queryHistogram).some((k) => s.toLowerCase().includes(k)))
+        .filter(
+          (s) =>
+            s.length > 0 && Object.keys(queryHistogram).some((k) => s.toLowerCase().includes(k))
+        )
     : [];
 
   const copyText = buildCopyText(selected, costBand ?? "", supplierHint ?? "");
@@ -60,7 +64,6 @@ export default function CostingPrior({ results, selected, queryHistogram }: Prop
     try {
       await navigator.clipboard.writeText(copyText);
     } catch {
-      // fallback for non-secure contexts
       const el = document.createElement("textarea");
       el.value = copyText;
       document.body.appendChild(el);
@@ -71,67 +74,60 @@ export default function CostingPrior({ results, selected, queryHistogram }: Prop
   }
 
   return (
-    <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3 text-sm">
-      <h3 className="font-semibold text-gray-800 text-xs uppercase tracking-wide">
+    <div className="bg-ink-900/[0.03] border border-ink-400/20 rounded-xl p-4 space-y-3 text-sm">
+      <h3 className="font-semibold text-ink-800 text-xs uppercase tracking-wide">
         Costing Prior
       </h3>
 
-      {/* Reference cost */}
       {selected.cost > 0 && (
         <div className="flex justify-between">
-          <span className="text-gray-500">Reference quote</span>
-          <span className="font-semibold text-gray-900">${selected.cost.toLocaleString()}</span>
+          <span className="text-ink-400">Reference quote</span>
+          <span className="font-semibold text-ink-900">${selected.cost.toLocaleString()}</span>
         </div>
       )}
 
-      {/* Cost band */}
       {costBand && (
         <div className="flex justify-between">
-          <span className="text-gray-500">Historical range</span>
-          <span className="font-medium text-gray-700">{costBand}</span>
+          <span className="text-ink-400">Historical range</span>
+          <span className="font-medium text-ink-800">{costBand}</span>
         </div>
       )}
 
-      {/* Supplier hint */}
       {supplierHint && (
-        <div className="bg-blue-50 rounded-lg px-3 py-2 text-blue-800 text-xs">
+        <div className="bg-brand-50 rounded-lg px-3 py-2 text-brand-700 text-xs">
           💡 {supplierHint}
         </div>
       )}
 
-      {/* Process + material */}
       <div className="grid grid-cols-2 gap-2 text-xs">
         {selected.material && (
           <div>
-            <span className="text-gray-400 block">Material</span>
-            <span className="font-medium text-gray-700">{selected.material}</span>
+            <span className="text-ink-400 block">Material</span>
+            <span className="font-medium text-ink-800">{selected.material}</span>
           </div>
         )}
         {selected.process && (
           <div>
-            <span className="text-gray-400 block">Process</span>
-            <span className="font-medium text-gray-700">{selected.process}</span>
+            <span className="text-ink-400 block">Process</span>
+            <span className="font-medium text-ink-800">{selected.process}</span>
           </div>
         )}
       </div>
 
-      {/* DFM warning */}
       {dfmWarnings.length > 0 && (
         <div className="bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 text-xs text-amber-800">
           ⚠ DFM flag from history: {dfmWarnings.join(", ")}
         </div>
       )}
 
-      {/* PPAP */}
       {selected.ppap_notes && (
-        <div className="text-xs text-gray-500">{selected.ppap_notes}</div>
+        <div className="text-xs text-ink-400">{selected.ppap_notes}</div>
       )}
 
-      {/* Copy button */}
       <button
         data-testid="copy-costing-context"
         onClick={handleCopy}
-        className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-lg transition-colors"
+        className="w-full py-2 bg-brand-500 hover:bg-brand-600 text-white text-xs font-medium rounded-lg transition-colors"
       >
         Copy context for Costing
       </button>
