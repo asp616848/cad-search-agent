@@ -13,6 +13,7 @@ export default function Search() {
   const [text, setText] = useState("");
   const [results, setResults] = useState<SearchResult[]>([]);
   const [queryHistogram, setQueryHistogram] = useState<Record<string, number>>({});
+  const [queryOccStats, setQueryOccStats] = useState<Record<string, number>>({});
   const [latencyMs, setLatencyMs] = useState<number | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<number | null>(null);
@@ -48,6 +49,7 @@ export default function Search() {
       const data = await search({ file: file ?? undefined, text, k: 5 }, setStage);
       setResults(data.results);
       setQueryHistogram(data.query_histogram);
+      setQueryOccStats(data.query_occ_stats);
       setLatencyMs(data.latency_ms);
       setStage("done");
     } catch (e: unknown) {
@@ -150,7 +152,13 @@ export default function Search() {
                             selected={r}
                             queryHistogram={queryHistogram}
                           />
-                          <ExplainPanel result={r} queryMode={queryMode} queryText={text} />
+                          <ExplainPanel
+                            result={r}
+                            queryMode={queryMode}
+                            queryText={text}
+                            queryHistogram={queryHistogram}
+                            queryOccStats={queryOccStats}
+                          />
                         </div>
                       </div>
                     )}

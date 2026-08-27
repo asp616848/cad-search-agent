@@ -25,6 +25,7 @@ from app.core.graph_builder import step_to_dgl_graph  # noqa: E402
 from app.core.occ_stats import compute as occ_stats  # noqa: E402
 from app.core.search_index import SearchIndex  # noqa: E402
 from app.core.text_embedder import embed_text  # noqa: E402
+from app.core.thumbnail import render_thumbnail  # noqa: E402
 from app.core.uvnet_embedder import embed  # noqa: E402
 from app.occwl.io import load_shell  # noqa: E402
 
@@ -85,6 +86,8 @@ def main() -> None:
 
     mesh_dir = out_dir / "meshes"
     mesh_dir.mkdir(exist_ok=True)
+    thumb_dir = out_dir / "thumbnails"
+    thumb_dir.mkdir(exist_ok=True)
 
     idx = SearchIndex(db_path=out_dir / "parts.db")
     succeeded, failed = [], []
@@ -124,6 +127,13 @@ def main() -> None:
                 _export_gltf(step_path, glb_path)
             except Exception as e:
                 print(f"  WARN  glTF export failed for {fname}: {e}")
+
+            # Thumbnail render (best-effort, depends on the glb existing)
+            if glb_path.exists():
+                try:
+                    render_thumbnail(glb_path, thumb_dir / f"{part_id}.png")
+                except Exception as e:
+                    print(f"  WARN  thumbnail render failed for {fname}: {e}")
 
             elapsed = time.time() - t0
             print(f"  OK  {fname} ({elapsed:.1f}s)")

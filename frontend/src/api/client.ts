@@ -9,6 +9,7 @@ export interface SearchResult {
   known_issues: string;
   ppap_notes: string;
   histogram: Record<string, number>;
+  occ_stats: Record<string, number>;
   geo_score: number | null;
   text_score: number | null;
   final_score: number;
@@ -20,6 +21,7 @@ export interface SearchResult {
 export interface SearchResponse {
   results: SearchResult[];
   query_histogram: Record<string, number>;
+  query_occ_stats: Record<string, number>;
   latency_ms: number;
 }
 
@@ -74,7 +76,7 @@ export async function search(
   if (!res.ok) return _fail(res);
   onStage?.("done");
   const data = await res.json();
-  return { ...data, query_histogram: {} };
+  return { ...data, query_histogram: {}, query_occ_stats: {} };
 }
 
 /** Converts an uploaded STEP to a glb blob URL for the query-side 3D viewer.
@@ -96,6 +98,8 @@ export async function explainResult(params: {
   textScore: number;
   queryMode: QueryMode;
   queryText?: string;
+  queryHistogram?: Record<string, number>;
+  queryOccStats?: Record<string, number>;
 }): Promise<string> {
   const res = await fetch("/api/explain", {
     method: "POST",
@@ -106,6 +110,8 @@ export async function explainResult(params: {
       text_score: params.textScore,
       query_mode: params.queryMode,
       query_text: params.queryText ?? "",
+      query_histogram: params.queryHistogram ?? {},
+      query_occ_stats: params.queryOccStats ?? {},
     }),
   });
   if (!res.ok) return _fail(res);
@@ -120,6 +126,8 @@ export async function askAboutResult(params: {
   textScore: number;
   queryMode: QueryMode;
   queryText?: string;
+  queryHistogram?: Record<string, number>;
+  queryOccStats?: Record<string, number>;
 }): Promise<string> {
   const res = await fetch("/api/explain/ask", {
     method: "POST",
@@ -131,6 +139,8 @@ export async function askAboutResult(params: {
       text_score: params.textScore,
       query_mode: params.queryMode,
       query_text: params.queryText ?? "",
+      query_histogram: params.queryHistogram ?? {},
+      query_occ_stats: params.queryOccStats ?? {},
     }),
   });
   if (!res.ok) return _fail(res);

@@ -12,7 +12,7 @@
       "recall@3": 1.0,
       "top_result": "Machined Block 01 (10x rectangular blind slot + 3x rectangular through slot)",
       "top_score": 1.0,
-      "latency_s": 3.584
+      "latency_s": 4.051
     },
     {
       "id": "near_dup_pair",
@@ -22,7 +22,7 @@
       "recall@3": 1.0,
       "top_result": "Machined Block 01 (10x rectangular blind slot + 3x rectangular through slot)",
       "top_score": 1.0,
-      "latency_s": 0.124
+      "latency_s": 0.111
     },
     {
       "id": "self_search_block15",
@@ -32,7 +32,7 @@
       "recall@3": 1.0,
       "top_result": "Machined Block 15 (14x rectangular pocket + 4x rectangular passage)",
       "top_score": 1.0,
-      "latency_s": 0.172
+      "latency_s": 0.162
     },
     {
       "id": "text_acme_supplier",
@@ -42,7 +42,7 @@
       "recall@3": 1.0,
       "top_result": "Machined Block 03 (5x rectangular through slot)",
       "top_score": 0.7267,
-      "latency_s": 6.608
+      "latency_s": 6.443
     },
     {
       "id": "text_titanium",
@@ -52,7 +52,7 @@
       "recall@3": 1.0,
       "top_result": "Machined Block 23 (4x 6sides pocket + 3x rectangular through step)",
       "top_score": 0.6337,
-      "latency_s": 0.023
+      "latency_s": 0.03
     },
     {
       "id": "text_chamfer",
@@ -62,7 +62,7 @@
       "recall@3": 1.0,
       "top_result": "Machined Block 27 (6x chamfer + 2x rectangular blind step)",
       "top_score": 0.502,
-      "latency_s": 0.008
+      "latency_s": 0.01
     },
     {
       "id": "text_precision_parts",
@@ -72,7 +72,7 @@
       "recall@3": 1.0,
       "top_result": "Machined Block 07 (5x rectangular blind slot + 4x triangular blind step)",
       "top_score": 0.5233,
-      "latency_s": 0.017
+      "latency_s": 0.018
     },
     {
       "id": "text_triangular_pocket",
@@ -82,7 +82,7 @@
       "recall@3": 1.0,
       "top_result": "Machined Block 29 (14x rectangular pocket + 6x triangular through slot)",
       "top_score": 0.6757,
-      "latency_s": 0.008
+      "latency_s": 0.009
     }
   ]
 }

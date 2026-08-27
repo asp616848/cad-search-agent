@@ -5,8 +5,9 @@ from __future__ import annotations
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
+from app.config import DATA_DIR
 from app.core.index_singleton import get_index
-from app.core.llm_adapter import _describe_query, explain
+from app.core.llm_adapter import _describe_query, _facts_line, explain
 
 router = APIRouter()
 
@@ -17,6 +18,8 @@ class ExplainRequest(BaseModel):
     text_score: float = 0.0
     query_mode: str = "cad"  # "cad" | "text" | "cad_text"
     query_text: str = ""
+    query_histogram: dict[str, int] = {}
+    query_occ_stats: dict = {}
 
 
 class AskRequest(BaseModel):
@@ -26,6 +29,8 @@ class AskRequest(BaseModel):
     text_score: float = 0.0
     query_mode: str = "cad"
     query_text: str = ""
+    query_histogram: dict[str, int] = {}
+    query_occ_stats: dict = {}
 
 
 def _result_meta(part) -> dict:
@@ -35,7 +40,14 @@ def _result_meta(part) -> dict:
         "process": part.process,
         "notes": part.notes,
         "known_issues": part.known_issues,
+        "histogram": part.histogram,
+        "occ_stats": part.occ_stats,
     }
+
+
+def _thumbnail_path(result_id: int):
+    path = DATA_DIR / "thumbnails" / f"{result_id}.png"
+    return path if path.exists() else None
 
 
 @router.post("/explain")
@@ -46,9 +58,15 @@ def post_explain(body: ExplainRequest):
         raise HTTPException(404, f"Part {body.result_id} not found")
 
     text = explain(
-        query_meta={"mode": body.query_mode, "text": body.query_text},
+        query_meta={
+            "mode": body.query_mode,
+            "text": body.query_text,
+            "histogram": body.query_histogram,
+            "occ_stats": body.query_occ_stats,
+        },
         result_meta=_result_meta(part),
         scores={"geo": body.geo_score, "text": body.text_score},
+        result_image_path=_thumbnail_path(body.result_id),
     )
     return {"explanation": text}
 
@@ -74,31 +92,39 @@ def post_ask(body: AskRequest):
         }
 
     meta = _result_meta(part)
-    query_meta = {"mode": body.query_mode, "text": body.query_text}
+    query_meta = {
+        "mode": body.query_mode,
+        "text": body.query_text,
+        "histogram": body.query_histogram,
+        "occ_stats": body.query_occ_stats,
+    }
     geo_sentence = (
         "Geometry was not evaluated for this query (it was a text-only search)."
         if body.geo_score is None
         else f"Geometry similarity: {round(body.geo_score * 100)}%."
     )
+    result_facts = _facts_line(meta["histogram"], meta["occ_stats"])
     prompt = (
         f"{_describe_query(query_meta)} "
-        f"The candidate result is '{meta['name']}' ({meta['material']}, {meta['process']}). "
+        f"The candidate result is '{meta['name']}' ({meta['material']}, {meta['process']}) "
+        f"with {result_facts}. "
         f"{geo_sentence} Text/metadata similarity: {round(body.text_score * 100)}%. "
         f"Notes: {meta['notes']}. Known issues: {meta['known_issues']}. "
         f'The user asks: "{body.question}"\n'
-        f"Answer concisely (2-4 sentences), grounded only in the info above. Do not claim "
-        f"a geometry comparison happened if it did not."
+        f"Answer concisely (2-4 sentences), grounded only in the info above (including the "
+        f"attached image if present). Do not claim a geometry comparison happened if it did not."
     )
 
+    image_path = _thumbnail_path(body.result_id)
     try:
         if LLM_PROVIDER == "anthropic":
             from app.core.llm_adapter import _call_anthropic
 
-            answer = _call_anthropic(prompt)
+            answer = _call_anthropic(prompt, image_path)
         elif LLM_PROVIDER == "gemini":
             from app.core.llm_adapter import _call_gemini
 
-            answer = _call_gemini(prompt)
+            answer = _call_gemini(prompt, image_path)
         else:
             answer = "Unknown LLM_PROVIDER."
     except Exception as e:

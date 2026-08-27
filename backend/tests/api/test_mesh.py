@@ -21,6 +21,8 @@ def mesh_client(tmp_path_factory):
     tmp = tmp_path_factory.mktemp("mesh_data")
     mesh_dir = tmp / "meshes"
     mesh_dir.mkdir()
+    thumb_dir = tmp / "thumbnails"
+    thumb_dir.mkdir()
 
     idx = SearchIndex(db_path=tmp / "parts.db")
 
@@ -51,10 +53,17 @@ def mesh_client(tmp_path_factory):
 
     singleton_mod._index = idx
 
-    # Patch DATA_DIR so mesh endpoint finds the right directory
+    # Patch DATA_DIR so mesh/thumbnail endpoints find the right directory
     import app.api.mesh as mesh_mod
 
     mesh_mod._MESH_DIR = mesh_dir
+    mesh_mod._THUMB_DIR = thumb_dir
+
+    # Render a real thumbnail for the first part only, so the "not found"
+    # test below has a genuinely missing case to check.
+    from app.core.thumbnail import render_thumbnail
+
+    render_thumbnail(mesh_dir / f"{part_ids[0]}.glb", thumb_dir / f"{part_ids[0]}.png")
 
     from app.main import app
 
@@ -76,7 +85,15 @@ def test_mesh_not_found(mesh_client):
     assert r.status_code == 404
 
 
-def test_thumbnail_not_found_graceful(mesh_client):
+def test_thumbnail_bytes_valid(mesh_client):
     client, part_ids = mesh_client
     r = client.get(f"/api/thumbnail/{part_ids[0]}")
+    assert r.status_code == 200
+    assert r.content[:8] == b"\x89PNG\r\n\x1a\n"
+
+
+def test_thumbnail_not_found_graceful(mesh_client):
+    client, part_ids = mesh_client
+    # part_ids[1] exists in the index but has no rendered thumbnail file
+    r = client.get(f"/api/thumbnail/{part_ids[1]}")
     assert r.status_code == 404

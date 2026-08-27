@@ -8,7 +8,7 @@ from pathlib import Path
 
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 
-from app.config import ALLOWED_EXTENSIONS, MAX_UPLOAD_MB
+from app.config import ALLOWED_EXTENSIONS, DATA_DIR, MAX_UPLOAD_MB
 from app.core.index_singleton import get_index
 
 router = APIRouter()
@@ -137,6 +137,17 @@ async def index_part(
             occ_stats=stats,
         )
         idx.save()
+
+        from app.api.mesh import _export_gltf
+        from app.core.thumbnail import render_thumbnail
+
+        glb_path = DATA_DIR / "meshes" / f"{part_id}.glb"
+        try:
+            _export_gltf(tmp_path, glb_path)
+            render_thumbnail(glb_path, DATA_DIR / "thumbnails" / f"{part_id}.png")
+        except Exception:
+            pass  # mesh/thumbnail are best-effort; part is still indexed
+
         return {"id": part_id, "name": meta.get("name", ""), "index_size": idx.count()}
     finally:
         tmp_path.unlink(missing_ok=True)

@@ -50,6 +50,7 @@ def _hit_to_dict(hit: SearchHit, geo_available: bool = True) -> dict:
         "known_issues": part.known_issues,
         "ppap_notes": part.ppap_notes,
         "histogram": part.histogram,
+        "occ_stats": part.occ_stats,
         "geo_score": round(hit.geo_score, 4) if geo_available else None,
         "text_score": round(hit.text_score, 4),
         "final_score": round(hit.final_score, 4),
@@ -80,7 +81,9 @@ async def search_cad(
 
     try:
         from app.core.graph_builder import step_to_dgl_graph
+        from app.core.occ_stats import compute as occ_stats
         from app.core.uvnet_embedder import embed
+        from app.occwl.io import load_shell
 
         try:
             graph = step_to_dgl_graph(tmp_path)
@@ -93,6 +96,12 @@ async def search_cad(
                 "This STEP has freeform surfaces we can't convert to a B-rep graph. "
                 "Try a prismatic solid (milled or turned part).",
             ) from e
+
+        try:
+            solids = load_shell(str(tmp_path))
+            query_stats = occ_stats(solids[0].topods_shape()) if solids else {}
+        except Exception:
+            query_stats = {}
 
         idx = get_index()
         pool = min(idx.count(), max(k, _FUSION_POOL))
@@ -135,6 +144,7 @@ async def search_cad(
             {
                 "results": results,
                 "query_histogram": histogram,
+                "query_occ_stats": query_stats,
                 "latency_ms": latency_ms,
             }
         )

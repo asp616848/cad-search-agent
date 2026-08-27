@@ -7,9 +7,18 @@
 #   pip install "dgl==1.1.3" -f https://data.dgl.ai/wheels/repo.html
 #   pip install "pydeprecate==0.3.2"   # occwl checkpoint compat, NOT `deprecate`
 #   pip install google-generativeai    # Gemini LLM adapter
+#   pip install trimesh                # loads glb for thumbnail.py's rasterizer
 #
 # pythonocc-core 7.8+ removed list_of_shapes_to_compound (breaks occwl) — pin 7.7.2.
 # Both conda's OCC and pip's torch ship OpenMP; run with KMP_DUPLICATE_LIB_OK=TRUE.
+#
+# Thumbnail rendering (app/core/thumbnail.py) deliberately does NOT use a
+# GPU/window-server-backed renderer — trimesh's pyglet viewer crashes on
+# macOS window teardown, and pyvista/VTK offscreen rendering hangs waiting
+# for a display that isn't there. It uses a small self-contained numpy
+# z-buffer rasterizer instead (trimesh only for parsing the glb, not
+# rendering it) — zero GPU dependency, works identically everywhere.
 
 torch==2.5.1
 google-generativeai==0.8.6
+trimesh==5.0.0

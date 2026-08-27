@@ -9,6 +9,7 @@ from __future__ import annotations
 import hashlib
 import json
 import sqlite3
+from pathlib import Path
 
 from app.config import DATA_DIR, LLM_API_KEY, LLM_PROVIDER
 
@@ -44,6 +45,31 @@ def _cache_key(query_meta: dict, result_meta: dict, scores: dict) -> str:
     return hashlib.sha256(payload.encode()).hexdigest()
 
 
+def _facts_line(histogram: dict, occ_stats: dict) -> str:
+    """Render the structured geometry facts we actually have (feature
+    histogram + OCC stats) as a short text blurb, so the LLM can reason
+    about concrete feature counts/dimensions instead of only percentages."""
+    parts = []
+    if histogram:
+        feat_str = ", ".join(f"{v}x {k.replace('_', ' ')}" for k, v in histogram.items() if v)
+        if feat_str:
+            parts.append(f"features: {feat_str}")
+    if occ_stats:
+        bits = []
+        if occ_stats.get("face_count"):
+            bits.append(f"{occ_stats['face_count']} faces")
+        if occ_stats.get("volume"):
+            bits.append(f"volume {occ_stats['volume']:.0f}mm3")
+        bx, by, bz = occ_stats.get("bbox_x"), occ_stats.get("bbox_y"), occ_stats.get("bbox_z")
+        if bx and by and bz:
+            bits.append(f"bbox {bx:.0f}x{by:.0f}x{bz:.0f}mm")
+        if occ_stats.get("solidity"):
+            bits.append(f"solidity {occ_stats['solidity']:.2f}")
+        if bits:
+            parts.append("stats: " + ", ".join(bits))
+    return "; ".join(parts) if parts else "no structured geometry facts available"
+
+
 def _template(query_meta: dict, result_meta: dict, scores: dict) -> str:
     geo = scores.get("geo")
     text_pct = round(scores.get("text", 0) * 100)
@@ -72,6 +98,8 @@ def _describe_query(query_meta: dict) -> str:
     invents a CAD comparison that didn't happen (or vice versa)."""
     mode = query_meta.get("mode", "cad")
     text_query = query_meta.get("text", "")
+    facts = _facts_line(query_meta.get("histogram", {}), query_meta.get("occ_stats", {}))
+
     if mode == "text":
         return (
             f'The user ran a TEXT-ONLY search for "{text_query}" — no STEP/CAD file was '
@@ -79,10 +107,10 @@ def _describe_query(query_meta: dict) -> str:
         )
     if mode == "cad_text":
         return (
-            f'The user uploaded a STEP/CAD file and also typed "{text_query}" as narrowing '
-            f"text — both geometry and text were compared."
+            f'The user uploaded a STEP/CAD file (query {facts}) and also typed "{text_query}" '
+            f"as narrowing text — both geometry and text were compared."
         )
-    return "The user uploaded a STEP/CAD file and searched by geometry (no extra text typed)."
+    return f"The user uploaded a STEP/CAD file (query {facts}) and searched by geometry only."
 
 
 def _build_explain_prompt(query_meta: dict, result_meta: dict, scores: dict) -> str:
@@ -92,35 +120,62 @@ def _build_explain_prompt(query_meta: dict, result_meta: dict, scores: dict) -> 
         if geo is None
         else f"Geometry similarity: {round(geo * 100)}%."
     )
+    result_facts = _facts_line(result_meta.get("histogram", {}), result_meta.get("occ_stats", {}))
     return (
         f"{_describe_query(query_meta)} "
         f"The candidate result is '{result_meta.get('name')}' "
-        f"({result_meta.get('material', '')}, {result_meta.get('process', '')}). "
+        f"({result_meta.get('material', '')}, {result_meta.get('process', '')}) "
+        f"with {result_facts}. "
         f"{geo_sentence} Text/metadata similarity: {round(scores.get('text', 0) * 100)}%. "
-        f"In 2-3 sentences, explain why this result surfaced, being precise about which "
-        f"signal (geometry, text, or both) actually drove the match. Do not claim a "
-        f"geometry comparison happened if it did not. Be concise and engineering-specific."
+        f"Using the concrete feature counts and dimensions above (not just the percentages), "
+        f"explain in 2-3 sentences why this result surfaced and how its actual geometry "
+        f"compares to the query's. Be specific about matching or differing feature types/counts "
+        f"when both sides have them. Do not claim a geometry comparison happened if it did not. "
+        f"Be concise and engineering-specific."
     )
 
 
-def _call_anthropic(prompt: str) -> str:
+def _call_anthropic(prompt: str, image_path: Path | None = None) -> str:
+    import base64
+
     import anthropic  # type: ignore[import]
 
     client = anthropic.Anthropic(api_key=LLM_API_KEY)
+    content: list = []
+    if image_path and image_path.exists():
+        content.append(
+            {
+                "type": "image",
+                "source": {
+                    "type": "base64",
+                    "media_type": "image/png",
+                    "data": base64.b64encode(image_path.read_bytes()).decode(),
+                },
+            }
+        )
+    content.append({"type": "text", "text": prompt})
+
     msg = client.messages.create(
         model="claude-haiku-4-5-20251001",
-        max_tokens=120,
-        messages=[{"role": "user", "content": prompt}],
+        max_tokens=160,
+        messages=[{"role": "user", "content": content}],
     )
     return msg.content[0].text.strip()
 
 
-def _call_gemini(prompt: str) -> str:
+def _call_gemini(prompt: str, image_path: Path | None = None) -> str:
     import google.generativeai as genai  # type: ignore[import]
 
     genai.configure(api_key=LLM_API_KEY)
     model = genai.GenerativeModel("gemini-2.5-flash")
-    response = model.generate_content(prompt)
+
+    parts: list = [prompt]
+    if image_path and image_path.exists():
+        from PIL import Image
+
+        parts.append(Image.open(image_path))
+
+    response = model.generate_content(parts)
     return response.text.strip()
 
 
@@ -128,8 +183,15 @@ def explain(
     query_meta: dict,
     result_meta: dict,
     scores: dict,
+    result_image_path: Path | None = None,
 ) -> str:
     """Return a 2-3 sentence explanation of why the result matches the query.
+
+    query_meta / result_meta may carry "histogram" and "occ_stats" keys —
+    when present, these concrete feature counts and dimensions are folded
+    into the prompt so the LLM reasons about real geometry, not just the
+    similarity percentages. If result_image_path points at an existing
+    thumbnail PNG, it's attached as a vision input (gemini/anthropic only).
 
     Falls back to template if LLM_PROVIDER is 'none' or call fails.
     Result is cached in SQLite keyed by (query_meta, result_meta, scores).
@@ -147,9 +209,9 @@ def explain(
         prompt = _build_explain_prompt(query_meta, result_meta, scores)
         try:
             if LLM_PROVIDER == "anthropic":
-                text = _call_anthropic(prompt)
+                text = _call_anthropic(prompt, result_image_path)
             elif LLM_PROVIDER == "gemini":
-                text = _call_gemini(prompt)
+                text = _call_gemini(prompt, result_image_path)
         except Exception:
             pass  # fall through to template already set
 

@@ -6,9 +6,17 @@ interface Props {
   result: SearchResult;
   queryMode: QueryMode;
   queryText: string;
+  queryHistogram: Record<string, number>;
+  queryOccStats: Record<string, number>;
 }
 
-export default function ExplainPanel({ result, queryMode, queryText }: Props) {
+export default function ExplainPanel({
+  result,
+  queryMode,
+  queryText,
+  queryHistogram,
+  queryOccStats,
+}: Props) {
   const [explanation, setExplanation] = useState<string | null>(null);
   const [loadingExplain, setLoadingExplain] = useState(true);
   const [question, setQuestion] = useState("");
@@ -26,6 +34,8 @@ export default function ExplainPanel({ result, queryMode, queryText }: Props) {
       textScore: result.text_score ?? 0,
       queryMode,
       queryText,
+      queryHistogram,
+      queryOccStats,
     })
       .then((text) => {
         if (!cancelled) setExplanation(text);
@@ -39,6 +49,7 @@ export default function ExplainPanel({ result, queryMode, queryText }: Props) {
     return () => {
       cancelled = true;
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [result.id, result.geo_score, result.text_score, queryMode, queryText]);
 
   async function handleAsk() {
@@ -53,6 +64,8 @@ export default function ExplainPanel({ result, queryMode, queryText }: Props) {
         textScore: result.text_score ?? 0,
         queryMode,
         queryText,
+        queryHistogram,
+        queryOccStats,
       });
       setAnswer(a);
     } catch (e: unknown) {
