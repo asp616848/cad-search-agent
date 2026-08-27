@@ -1,0 +1,88 @@
+{
+  "mrr": 0.9375,
+  "recall_at_3": 1.0,
+  "queries_passing": "8/8",
+  "near_dup_rank_1": true,
+  "per_query": [
+    {
+      "id": "self_search_A",
+      "type": "cad",
+      "rr": 1.0,
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "top_result": "partA",
+      "top_score": 1.0,
+      "latency_s": 7.707
+    },
+    {
+      "id": "self_search_B",
+      "type": "cad",
+      "rr": 1.0,
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "top_result": "partB",
+      "top_score": 1.0,
+      "latency_s": 0.391
+    },
+    {
+      "id": "self_search_C",
+      "type": "cad",
+      "rr": 1.0,
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "top_result": "partC",
+      "top_score": 1.0,
+      "latency_s": 1.157
+    },
+    {
+      "id": "text_acme_supplier",
+      "type": "text",
+      "rr": 1.0,
+      "recall@1": 0.5,
+      "recall@3": 1.0,
+      "top_result": "partA",
+      "top_score": 0.6702,
+      "latency_s": 6.631
+    },
+    {
+      "id": "text_counterbore",
+      "type": "text",
+      "rr": 1.0,
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "top_result": "partA",
+      "top_score": 0.4936,
+      "latency_s": 0.025
+    },
+    {
+      "id": "text_thin_wall",
+      "type": "text",
+      "rr": 1.0,
+      "recall@1": 0.5,
+      "recall@3": 1.0,
+      "top_result": "partC",
+      "top_score": 0.6527,
+      "latency_s": 0.038
+    },
+    {
+      "id": "text_shaft",
+      "type": "text",
+      "rr": 1.0,
+      "recall@1": 1.0,
+      "recall@3": 1.0,
+      "top_result": "partB",
+      "top_score": 0.6878,
+      "latency_s": 0.01
+    },
+    {
+      "id": "text_ppap",
+      "type": "text",
+      "rr": 0.5,
+      "recall@1": 0.0,
+      "recall@3": 1.0,
+      "top_result": "partA",
+      "top_score": 0.3512,
+      "latency_s": 0.029
+    }
+  ]
+}

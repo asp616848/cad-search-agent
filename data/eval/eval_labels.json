@@ -1,0 +1,62 @@
+[
+  {
+    "id": "self_search_A",
+    "type": "cad",
+    "step_path": "backend/tests/fixtures/partA.step",
+    "relevant_names": ["partA"],
+    "near_dup": true,
+    "min_score": 0.99,
+    "description": "partA must rank itself #1 with geo >= 0.99"
+  },
+  {
+    "id": "self_search_B",
+    "type": "cad",
+    "step_path": "backend/tests/fixtures/partB.step",
+    "relevant_names": ["partB"],
+    "near_dup": false,
+    "description": "partB must rank itself #1"
+  },
+  {
+    "id": "self_search_C",
+    "type": "cad",
+    "step_path": "backend/tests/fixtures/partC.step",
+    "relevant_names": ["partC"],
+    "near_dup": false,
+    "description": "partC must rank itself #1"
+  },
+  {
+    "id": "text_acme_supplier",
+    "type": "text",
+    "query_text": "Acme Machining CNC milling aluminum",
+    "relevant_names": ["partA", "partC"],
+    "description": "text search for Acme supplier returns partA and partC"
+  },
+  {
+    "id": "text_counterbore",
+    "type": "text",
+    "query_text": "M6 counterbore holes bracket",
+    "relevant_names": ["partA"],
+    "description": "text search for M6 counterbore returns partA"
+  },
+  {
+    "id": "text_thin_wall",
+    "type": "text",
+    "query_text": "thin wall pocket CNC milling",
+    "relevant_names": ["partA", "partC"],
+    "description": "known_issues thin wall tokens match partA and partC"
+  },
+  {
+    "id": "text_shaft",
+    "type": "text",
+    "query_text": "turned shaft cylindrical bearing seat stainless",
+    "relevant_names": ["partB"],
+    "description": "text search for shaft returns partB"
+  },
+  {
+    "id": "text_ppap",
+    "type": "text",
+    "query_text": "PPAP approved aerospace titanium",
+    "relevant_names": ["partC"],
+    "description": "PPAP + aerospace tokens match partC"
+  }
+]

@@ -1,0 +1,35 @@
+[
+  {
+    "filename": "partA.step",
+    "name": "partA",
+    "material": "Aluminum 6061",
+    "process": "CNC Milling",
+    "cost": 420,
+    "supplier": "Acme Machining",
+    "notes": "M6 tapped holes counterbore bracket mounting face anodized finish",
+    "known_issues": "thin wall near inner pocket",
+    "ppap_notes": "PPAP Level 2 approved 2024-03"
+  },
+  {
+    "filename": "partB.step",
+    "name": "partB",
+    "material": "Stainless Steel 316",
+    "process": "CNC Turning",
+    "cost": 280,
+    "supplier": "Precision Parts Co",
+    "notes": "turned shaft cylindrical tight tolerance bearing seat",
+    "known_issues": "",
+    "ppap_notes": ""
+  },
+  {
+    "filename": "partC.step",
+    "name": "partC",
+    "material": "Titanium Grade 5",
+    "process": "CNC Milling",
+    "cost": 950,
+    "supplier": "Acme Machining",
+    "notes": "milled plate thin wall counterbore M6 holes aerospace grade",
+    "known_issues": "thin wall vibration at high feed rates",
+    "ppap_notes": "PPAP Level 3 submitted"
+  }
+]
