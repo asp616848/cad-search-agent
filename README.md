@@ -1,6 +1,6 @@
 # cad-search-agent
 
-Engineering search for Pre6: upload a STEP CAD file and/or type text → get ranked similar past
+Engineering search for CAD: upload a STEP CAD file and/or type text → get ranked similar past
 parts with geometry + text match scores, machining feature overlap, cost/supplier history, and an
 LLM "why this matched" explanation.
 ```
@@ -23,7 +23,6 @@ Graph message passing
 |---|---|
 | ![Search results](docs/screenshots/search-results.png) | ![Viewer + explain](docs/screenshots/viewer-explain.png) |
 
-*(drop `search-results.png` and `viewer-explain.png` into `docs/screenshots/`)*
 
 ---
 
@@ -440,7 +439,7 @@ cad-search-agent/
 
 ## Product framing (from `PRD.md`)
 
-Built for Pre6: engineering knowledge search that runs **before** Costing — turn every past
+Built for Cad Search: engineering knowledge search that runs **before** Costing — turn every past
 STEP + quote into a searchable vector, keep geometry and manufacturing-language as separate
 scored signals, and hand Costing a grounded prior instead of a blank slate. Built as 10 gated
 phases (repo skeleton → embedder → fusion index → API → mesh/thumbnails → frontend → 3D viewer +
